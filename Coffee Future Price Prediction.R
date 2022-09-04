@@ -37,34 +37,44 @@ library(zoo)
 #create tempfile and download
 
 dl <- tempfile()
-download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/raw/main/Database.xlsx", dl)
+download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/blob/2044135ec7c5bcfb6f357374de4ede11c9382fd8/CoffeDatabase.xlsx", dl)
 
 #read the file
-
-WINFUT <- read_excel("Database.xlsx", sheet = "WINFUT")
-DOLFUT <- read_excel("Database.xlsx", sheet = "DOLFUT")
-ICFFUT <- read_excel("Database.xlsx", sheet = "ICFFUT")
-
+database <- read_xlsx("CoffeDatabase.xlsx")
+WINFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "WINFUT", col_names = FALSE)
+DOLFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "DOLFUT")
+ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
+WINFUT
 #Future Contract of Coffee
 ICFFUT
 summary(ICFFUT)
 
 #Day without trade
-Notrade <- ICFFUT |> filter(`Volume Financeiro` == "0")
+Notrade <- ICFFUT |> filter(`Volume` == "0")
 Notrade
 
 returnICFFUT <- ICFFUT |> 
-  arrange(Data) |> 
-  mutate(ret = Fechamento - lag(Fechamento))
-returnICFFUT
+  arrange(Date) |> 
+  mutate(return = Close - lag(Close) ,
+         multiply = case_when(
+          Decision == "Neutral" ~ 0,
+          Decision == "Buy" ~ 1,
+          Decision == "Sell" ~ -1) ,
+         adjust = return * multiply)
+summary(returnICFFUT)
+df <- data.frame(returnICFFUT)
+profityear <- df |>
+  group_by(year(Date)) |>
+  mutate(Profit = sum(adjust, na.rm = TRUE))
+summary(profityear)
 
 #lag 1, 5, 10, 20 days in points
 returnICFFUTPTS <- ICFFUT |> 
-  arrange(Data) |> 
-  mutate(ret = Fechamento - lag(Fechamento),
-         ret5 = Fechamento - lag(Fechamento, n = 5) ,
-         ret10 = Fechamento - lag(Fechamento, n = 10),
-         ret22 = Fechamento - lag(Fechamento, n = 22))
+  arrange(Date) |> 
+  mutate(ret = Close - lag(Close),
+         ret5 = Close - lag(Close, n = 5) ,
+         ret10 = Close - lag(Close, n = 10),
+         ret22 = Close - lag(Close, n = 22))
 summary(returnICFFUTPTS)
 
 #lag 1, 5, 10, 20 days in percent
@@ -80,8 +90,8 @@ summary(returnICFFUTPER)
 #Outcome data visualization in points
 p1 <- returnICFFUTPTS |>
   ggplot(aes(x = year(Data), y = ret)) +
-  geom_hline(yintercept = 25, col="red") +
-  geom_hline(yintercept = -25, col= "red") +
+  geom_hline(yintercept = 50, col="red") +
+  geom_hline(yintercept = -50, col= "red") +
   geom_point()
   
 p5 <- returnICFFUTPTS |>
@@ -161,39 +171,63 @@ p2022 <- returnICFFUTPTS |>
   geom_point()
 p2022
 
-#Outcome data visualizantion in percent
+#Outcome data visualization in percent
 p1 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret)) +
+  ggplot(aes(x = year(Data), y = ret, group = year(Data)))  +
   geom_hline(yintercept = 0.1, col="red") +
   geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
+  geom_boxplot()
 
 p5 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret5)) +
+  ggplot(aes(x = year(Data), y = ret5, group = year(Data)))  +
   geom_hline(yintercept = 0.1, col="red") +
   geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
+  geom_boxplot()
 
 p10 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret10))  +
+  ggplot(aes(x = year(Data), y = ret10, group = year(Data)))  +
   geom_hline(yintercept = 0.1, col="red") +
   geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
+  geom_boxplot()
 
 p22 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret22))  +
+  ggplot(aes(x = month(Data), y = ret22, group = month(Data)))  +
   geom_hline(yintercept = 0.1, col="red") +
   geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
+  geom_boxplot()
+p22
 
 gridExtra::grid.arrange(p1, p5, p10, p22,
                         nrow = 2, 
                         top = "Return by trade days, year by year")
 
+
+pweek22 <- returnICFFUTPER |>
+  ggplot(aes(x = week(Data), y = ret22, group = week(Data)))  +
+  geom_hline(yintercept = 0.1, col="red") +
+  geom_hline(yintercept = -0.1, col= "red") +
+  geom_boxplot()
+pweek22
+
+pweek10 <- returnICFFUTPER |>
+  ggplot(aes(x = week(Data), y = ret10, group = week(Data)))  +
+  geom_hline(yintercept = 0.1, col="red") +
+  geom_hline(yintercept = -0.1, col= "red") +
+  geom_boxplot()
+pweek10
+
+pweekdays <- returnICFFUTPER |>
+  ggplot(aes(x = weekdays(Data), y = ret, group = weekdays(Data)))  +
+  geom_hline(yintercept = 0.1, col="red") +
+  geom_hline(yintercept = -0.1, col= "red") +
+  geom_boxplot()
+pweekdays
+
+
 p2003 <- returnICFFUTPER |>
   group_by(year(Data)) |>
-  filter(year(Data) == 2003) |>
-  ggplot(aes(x = Data, y = ret5))  +
+  filter(year(Data) == 2021) |>
+  ggplot(aes(x = Data, y = ret10))  +
   geom_hline(yintercept = 0.1, col="red") +
   geom_hline(yintercept = -0.1, col= "red") +
   geom_point()
@@ -242,77 +276,10 @@ p2022 <- returnICFFUTPER |>
   ggplot(aes(x = Data, y = ret5))  +
   geom_hline(yintercept = 0.1, col="red") +
   geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
+  geom_boxplot()
 p2022
 
 
+#Trade Strategy
 
-Upper50 <- returnICFFUT |> filter(ret22 > 50)
-summary(Upper50)
-
-
-Upper15 |>
-  ggplot(aes(x = Data, y = ret22)) +
-  geom_point()
-
-Under15 <- returnICFFUT |> filter(ret22 < - 0.15)
-summary(Under15)
-
-Under15 |>
-  ggplot(aes(x = Data, y = ret22)) +
-  geom_point()
-
-#lag 2 days
-
-return2ICFFUT <- ICFFUT |> 
-  arrange(Data) |> 
-  mutate(ret2 = Fechamento / lag(Fechamento, n = 2) - 1)
-summary(return2ICFFUT)
-
-
-return2ICFFUT |>
-  ggplot(aes(x = Data, y = ret2)) +
-  geom_point()
-
-Upper52 <- return2ICFFUT |> filter(ret2 > 0.05)
-summary(Upper52)
-
-
-Upper52 |>
-  ggplot(aes(x = Data, y = ret2)) +
-  geom_point()
-
-Under52 <- return2ICFFUT |> filter(ret2 < - 0.05)
-summary(Under52)
-
-Under52 |>
-  ggplot(aes(x = Data, y = ret2)) +
-  geom_point()
-
-
-#lag 3 days
-
-return3ICFFUT <- ICFFUT |> 
-  arrange(Data) |> 
-  mutate(ret3 = Fechamento / lag(Fechamento, n = 3) - 1)
-summary(return3ICFFUT)
-
-
-return3ICFFUT |>
-  ggplot(aes(x = Data, y = ret3)) +
-  geom_point()
-
-Upper53 <- return3ICFFUT |> filter(ret3 > 0.05)
-summary(Upper52)
-
-
-Upper53 |>
-  ggplot(aes(x = Data, y = ret3)) +
-  geom_point()
-
-Under53 <- return3ICFFUT |> filter(ret3 < - 0.05)
-summary(Under53)
-
-Under53 |>
-  ggplot(aes(x = Data, y = ret3)) +
-  geom_point()
+returnICFFUTPER |> 
