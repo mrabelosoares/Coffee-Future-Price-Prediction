@@ -39,37 +39,85 @@ library(zoo)
 dl <- tempfile()
 download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/blob/2044135ec7c5bcfb6f357374de4ede11c9382fd8/CoffeDatabase.xlsx", dl)
 
-#read the file
-database <- read_xlsx("CoffeDatabase.xlsx")
-WINFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "WINFUT", col_names = FALSE)
-DOLFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "DOLFUT")
+#read file
 ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
-WINFUT
-#Future Contract of Coffee
-ICFFUT
-summary(ICFFUT)
+#WINFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "WINFUT", col_names = FALSE)
+#DOLFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "DOLFUT")
+
+
+#create data frame ICFFUT - 4/5 Arabica Coffee Futures
+DFICFFUT <- as.data.frame(ICFFUT) |> mutate(Decision  = as.factor(Decision))
+
+#class, type and proprieties of data frame
+sapply(DFICFFUT, class)
+sapply(DFICFFUT, typeof)
+as_tibble(DFICFFUT)
+summary(DFICFFUT)
+
+#defining the outcome and predictors
+
+y <- DFICFFUT$Decision
+x <- DFICFFUT$Close
+
+
+set.seed(1, sample.kind="Rounding")
+test_index <- createDataPartition(y, times = 1, p = 0.5, list = FALSE)
+
+test_set <- DFICFFUT[test_index, ]
+train_set <- DFICFFUT[-test_index, ]
+test_set
+
+y_hat <- sample(c("Buy", "Neutral", "Sell"), 
+                length(test_index), replace = TRUE) |>
+  factor(levels = levels(test_set$Decision))
+y_hat
+
+mean(y_hat == test_set$Decision)
+
+a <- DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
+a
+
+
+y_hat <- case_when(
+  x > 398 ~ "Neutral",
+  x < 300 ~ "Sell",
+  x > 300 & x < 398 ~ "Buy")
+y_hat
+
+#x < 100 ~ "Buy"
+
+ifelse(x > 1000, "Buy", "Sell") %>% 
+  factor(levels = levels(test_set$Decision))
+y_hat
+
+
+mean(y == y_hat)
 
 #Day without trade
-Notrade <- ICFFUT |> filter(`Volume` == "0")
+Notrade <- DFICFFUT |> filter(`Volume` == "0")
 Notrade
 
-returnICFFUT <- ICFFUT |> 
+#distribution 
+
+
+
+returnICFFUT <- DFICFFUT |> 
   arrange(Date) |> 
   mutate(return = Close - lag(Close) ,
-         multiply = case_when(
+         multiplier = case_when(
           Decision == "Neutral" ~ 0,
           Decision == "Buy" ~ 1,
           Decision == "Sell" ~ -1) ,
-         adjust = return * multiply)
+         adjust = return * multiplier)
 summary(returnICFFUT)
-df <- data.frame(returnICFFUT)
-profityear <- df |>
+
+profityear <- returnICFFUT |>
   group_by(year(Date)) |>
   mutate(Profit = sum(adjust, na.rm = TRUE))
 summary(profityear)
 
 #lag 1, 5, 10, 20 days in points
-returnICFFUTPTS <- ICFFUT |> 
+returnICFFUTPTS <- returnICFFUT |> 
   arrange(Date) |> 
   mutate(ret = Close - lag(Close),
          ret5 = Close - lag(Close, n = 5) ,
@@ -78,7 +126,7 @@ returnICFFUTPTS <- ICFFUT |>
 summary(returnICFFUTPTS)
 
 #lag 1, 5, 10, 20 days in percent
-returnICFFUTPER <- ICFFUT |> 
+returnICFFUTPER <- returnICFFUT |> 
   arrange(Data) |> 
   mutate(ret = Fechamento / lag(Fechamento) - 1,
          ret5 = Fechamento / lag(Fechamento, n = 5) - 1,
