@@ -54,52 +54,79 @@ sapply(DFICFFUT, typeof)
 as_tibble(DFICFFUT)
 summary(DFICFFUT)
 
-#defining the outcome and predictors
-
+#defining the outcome
 y <- DFICFFUT$Decision
-x <- DFICFFUT$Close
+
+#distribution by decision
+DFICFFUT |>
+  ggplot(aes(Decision)) +
+  geom_histogram(binwidth = 1, color = "black", stat="count")
+
+#distribution through time
+DFICFFUT |>
+  ggplot(aes(week(Date),Decision)) +
+  geom_point()
 
 
+#defining the predictors - Model 1
+#Close Price
+x_1 <- DFICFFUT$Close
+
+#create a partition
 set.seed(1, sample.kind="Rounding")
 test_index <- createDataPartition(y, times = 1, p = 0.5, list = FALSE)
 
+#test_set and train_set
 test_set <- DFICFFUT[test_index, ]
 train_set <- DFICFFUT[-test_index, ]
-test_set
 
+#outcome by chance
 y_hat <- sample(c("Buy", "Neutral", "Sell"), 
                 length(test_index), replace = TRUE) |>
   factor(levels = levels(test_set$Decision))
 y_hat
 
+#accuracy test
 mean(y_hat == test_set$Decision)
 
-a <- DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
-a
 
+DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
 
+#defining the predictors - Model 2
+
+#Close Price
+x_1 <- DFICFFUT$Close
+#Time in week of the year
+X_2 <- week(DFICFFUT$Date)
+
+#mean of week of the year
+DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
+
+#conditional outcome - Model 2
 y_hat <- case_when(
-  x > 398 ~ "Neutral",
-  x < 300 ~ "Sell",
-  x > 300 & x < 398 ~ "Buy")
-y_hat
+  x >= 510 ~ "Buy",
+  x <= 468 ~ "Sell",
+  x > 468 & x < 510 ~ "Neutral")
+summary(y_hat)
 
-#x < 100 ~ "Buy"
+#accuracy test
+mean(y_hat == DFICFFUT$Decision)
 
-ifelse(x > 1000, "Buy", "Sell") %>% 
-  factor(levels = levels(test_set$Decision))
-y_hat
-
-
-mean(y == y_hat)
 
 #Day without trade
 Notrade <- DFICFFUT |> filter(`Volume` == "0")
 Notrade
 
+
+#defining the predictors - Model 3
+
+#Close Price
+x_1 <- DFICFFUT$Close
+#Time in week of the year
+X_2 <- week(DFICFFUT$Date)
+
+
 #distribution 
-
-
 
 returnICFFUT <- DFICFFUT |> 
   arrange(Date) |> 
