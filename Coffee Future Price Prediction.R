@@ -46,13 +46,17 @@ ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
 
 
 #create data frame ICFFUT - 4/5 Arabica Coffee Futures
-DFICFFUT <- as.data.frame(ICFFUT) |> mutate(Decision  = as.factor(Decision))
+DFICFFUT <- as.data.frame(ICFFUT) |> 
+  mutate(Decision  = as.factor(Decision),
+         weekofyear = week(Date),
+         year = year(Date))
 
 #class, type and proprieties of data frame
 sapply(DFICFFUT, class)
 sapply(DFICFFUT, typeof)
 as_tibble(DFICFFUT)
 summary(DFICFFUT)
+str(DFICFFUT)
 
 #defining the outcome
 y <- DFICFFUT$Decision
@@ -62,10 +66,26 @@ DFICFFUT |>
   ggplot(aes(Decision)) +
   geom_histogram(binwidth = 1, color = "black", stat="count")
 
-#distribution through time
+#distribution of risk through time - weekofyear
 DFICFFUT |>
-  ggplot(aes(week(Date),Decision)) +
-  geom_point()
+  ggplot(aes(weekofyear,Close / lag(Close), group = weekofyear)) +
+  geom_boxplot()
+
+#distribution of risk through time - year
+DFICFFUT |>
+  ggplot(aes(year,Close / lag(Close), group = year)) +
+  geom_boxplot()
+
+
+#distribution of risk through time - weekofyear
+DFICFFUT |>
+  ggplot(aes(weekofyear,Close - lag(Close), group = weekofyear)) +
+  geom_boxplot()
+
+#distribution of risk through time - year
+DFICFFUT |>
+  ggplot(aes(year,Close - lag(Close), group = year)) +
+  geom_boxplot()
 
 
 #defining the predictors - Model 1
@@ -353,8 +373,3 @@ p2022 <- returnICFFUTPER |>
   geom_hline(yintercept = -0.1, col= "red") +
   geom_boxplot()
 p2022
-
-
-#Trade Strategy
-
-returnICFFUTPER |> 
