@@ -14,6 +14,7 @@ if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-projec
 if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
 if(!require(purrr)) install.packages("purrr", repos = "http://cran.us.r-project.org")
 if(!require(zoo)) install.packages("zoo", repos = "http://cran.us.r-project.org")
+if(!require(runner)) install.packages("runner", repos = "http://cran.us.r-project.org")
 
 # Load library
 library(caret)
@@ -31,6 +32,7 @@ library(readxl)
 library(dplyr)
 library(purrr)
 library(zoo)
+library(runner)
 
 ##Data Clean
 
@@ -87,7 +89,22 @@ DFICFFUT |>
   ggplot(aes(year,Close - lag(Close), group = year)) +
   geom_boxplot()
 
+#empirical optimal results - sum last 22 days
+profitICFFUT <- DFICFFUT |> 
+  arrange(Date) |> 
+  mutate(return = Close - lag(Close) ,
+         status = as.factor(case_when(
+           Decision == lag(Decision) ~ "Hold",
+           Decision != lag(Decision) ~ "Change")),
+         multiplier = case_when(
+           Decision == "Neutral" ~ 0,
+           Decision == "Buy" ~ 1,
+           Decision == "Sell" ~ -1) ,
+         adjust = return * multiplier,
+         profit = sum_run(adjust, k=22))
+summary(profitICFFUT)
 
+  
 #defining the predictors - Model 1
 #Close Price
 x_1 <- DFICFFUT$Close
