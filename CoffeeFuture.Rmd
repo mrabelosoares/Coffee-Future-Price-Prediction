@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Introduction
 
-A Machine Learning for Factor Investing is a equity **investment strategies** that are built on **firm characteristics**, the goal of is this approach is to determine the model that maps the time-t characteristics of firms to their future performance.[^1] Factor investing is a subfield of a large discipline that encompasses asset allocation, quantitative trading and wealth management. Its premise is that differences in the returns of firms can be explained by the characteristics of these firms. In this project we use a similar approach but, instead a firm performance, our outcome is the 4/5 Arabica Coffee Futures contract performance traded at B3, which ticker is ICF.[^2] The goal of this project is to create a decision trade system, which result of trade year is positive, or $r_y$ \> 0, using all the tools we have learn throughout the multi-part course in HarvardX's Data Science Professional Certificate series.
+A Machine Learning for Factor Investing is a equity **investment strategies** that are built on **firm characteristics**, the goal of is this approach is to determine the model that maps the time-t characteristics of firms to their future performance.[^1] Factor investing is a subfield of a large discipline that encompasses asset allocation, quantitative trading and wealth management. Its premise is that differences in the returns of firms can be explained by the characteristics of these firms. In this project we use a similar approach but, instead a firm performance, our outcome is the 4/5 Arabica Coffee Futures contract performance traded at B3, which ticker is ICF.[^2] The goal of this project is to create a decision trade system, which result of the last 22 trade days is positive, or $r_m$ \> 0, using all the tools we have learn throughout the multi-part course in HarvardX's Data Science Professional Certificate series.
 
 [^1]: <http://www.mlfactor.com/index.html>
 
@@ -33,17 +33,13 @@ For this challenge we going to use a dataset provided by the Nelogica and Clear[
 
 The methods section explains the process and techniques used in this project
 
-The first one is the pure machine learning notation in which the **labels** (also called **output**, **dependent** variables or **predicted** variables) y=yi are approximated by functions of features Xi=(xi,1,…,xi,K). The dimension of the feature matrix X is I×K: there are I **instances**, **records**, or **observations** and each one of them has K **attributes**, **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables (all these terms will be used interchangeably). Sometimes, to ease notations, we will write xi for one instance (one row) of X or xk for one (feature) column vector of X
+The **label** $\mathbf{y}=y_i$ of this project are approximated by functions of features $\mathbf{X}_i=(x_{_i,1},\dots,x_{i,K})$ . The dimension of the feature matrix $X$ is $I×K$: there are $I$ **instances**, **records**, or **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables. We will write $x_i$ for one instance (one row) of $X$ or $x_k$ for one (feature) column vector of $X$.
 
-.
+The purpose of this project is to forecast **categories** (also called **classes**), \"buy,\" \"Neutral\" or \"sell.\" In order to be able to perform this type of classification analysis, we create additional labels that are categorical.
 
-The second notation type pertains to finance and will directly relate to the first. We will often work with discrete returns rt,n=pt,n/pt−1,n−1
+Notation type pertains to finance We will work with daily returns $r_{t,n}=p_{t,n}/p_{t-1,n}-1$
 
-computed from price data. Here t is the time index and n
-the asset index. Unless specified otherwise, the return is always
-computed over one period, though this period can sometimes be one month
-or one year. Whenever confusion might occur, we will specify other
-notations for returns.
+computed from price data. Here t is the time index and n the asset index. Unless specified otherwise, the return is always computed over one period, though this period can sometimes be one month or one year. Whenever confusion might occur, we will specify other notations for returns.
 
 Evaluation metrics
 
@@ -57,12 +53,7 @@ For this project we going to use a subset of dataset provided by
 
 for the sake of **reproducibility**, we will illustrate the concepts we present with examples of implementation based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on XX contracts listed in the B3. The time range starts in January 2003 and ends in August 2022. For each point in time, XX **characteristics** describe the decision in the sample. These attributes cover a wide range of topics:
 
-**valuation** (earning yields, accounting ratios);
-**profitability** and quality (return on equity);
-**momentum** and technical analysis (past returns, relative strength index);
-**risk** (volatilities);
-**estimates** (earnings-per-share);
-**volume** and **liquidity** (share turnover).
+**valuation** (earning yields, accounting ratios); **profitability** and quality (return on equity); **momentum** and technical analysis (past returns, relative strength index); **risk** (volatilities); **estimates** (earnings-per-share); **volume** and **liquidity** (share turnover).
 
 ```{r Load Library, message=FALSE, warning=FALSE, echo=TRUE}
 
