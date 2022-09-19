@@ -35,7 +35,7 @@ The methods section explains the process and techniques used in this project
 
 The **label** $\mathbf{y}=y_i$ of this project are approximated by functions of features $\mathbf{X}_i=(x_{_i,1},\dots,x_{i,K})$ . The dimension of the feature matrix $X$ is $I×K$: there are $I$ **instances**, **records**, or **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables. We will write $x_i$ for one instance (one row) of $X$ or $x_k$ for one (feature) column vector of $X$.
 
-The purpose of this project is to forecast **categories** (also called **classes**), \"buy,\" \"Neutral\" or \"sell.\" In order to be able to perform this type of classification analysis, we create additional labels that are categorical.
+The purpose of this project is to forecast **categories** (also called **classes**), \"Buy,\" \"Neutral\" or \"Sell.\" In order to be able to perform this type of classification analysis, we create additional labels that are categorical and continuous. The
 
 Notation type pertains to finance We will work with daily returns $r_{t,n}=p_{t,n}/p_{t-1,n}-1$
 
