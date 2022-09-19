@@ -97,14 +97,27 @@ profitICFFUT <- DFICFFUT |>
            Decision == lag(Decision) ~ "Hold",
            Decision != lag(Decision) ~ "Change")),
          multiplier = case_when(
+           status == "Change" & lag(Decision) == "Neutral" ~ 0,
+           status == "Hold" & Decision == "Neutral" ~ 0,
+           status == "Change" & lag(Decision) == "Buy" ~ 1,
+           status == "Hold" & Decision == "Buy" ~ 1,
+           status == "Change" & lag(Decision) == "Sell" ~ -1,
+           status == "Hold" & Decision == "Sell" ~ -1),
+           adjust = return * multiplier,
+         profit = case_when(
            Decision == "Neutral" ~ 0,
-           Decision == "Buy" ~ 1,
-           Decision == "Sell" ~ -1) ,
-         adjust = return * multiplier,
-         profit = sum_run(adjust, k=22))
+           Decision != "Neutral" ~ sum_run(adjust, k=22)
+           ))
 summary(profitICFFUT)
 
-  
+sum(profitICFFUT$adjust,na.rm = TRUE)*100
+
+#profit by time
+profitICFFUT |> 
+  ggplot(aes(Date, profit)) + 
+  geom_line()
+
+
 #defining the predictors - Model 1
 #Close Price
 x_1 <- DFICFFUT$Close
