@@ -132,12 +132,30 @@ train_set <- DFICFFUT[-test_index, ]
 
 #outcome by chance
 y_hat <- sample(c("Buy", "Neutral", "Sell"), 
-                length(test_index), replace = TRUE) |>
+                4468, replace = TRUE) |>
   factor(levels = levels(test_set$Decision))
 y_hat
 
+y_hat <- profitICFFUT |>
+  mutate(return = Close - lag(Close) ,
+         status = as.factor(case_when(
+           y_hat == lag(y_hat) ~ "Hold",
+           y_hat != lag(y_hat) ~ "Change")),
+         multiplier = case_when(
+           status == "Change" & lag(y_hat) == "Neutral" ~ 0,
+           status == "Hold" & y_hat == "Neutral" ~ 0,
+           status == "Change" & lag(y_hat) == "Buy" ~ 1,
+           status == "Hold" & y_hat == "Buy" ~ 1,
+           status == "Change" & lag(y_hat) == "Sell" ~ -1,
+           status == "Hold" & y_hat == "Sell" ~ -1),
+         adjust = return * multiplier,
+         profit = case_when(
+           Decision == "Neutral" ~ 0,
+           Decision != "Neutral" ~ sum_run(adjust, k=22)
+         ))
+sum(y_hat$profit, na.rm = TRUE)
 #accuracy test
-mean(y_hat == test_set$Decision)
+mean(y_hat$multiplier == profitICFFUT$multiplier, na.rm = TRUE)
 
 
 DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
