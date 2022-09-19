@@ -53,7 +53,7 @@ For this project we going to use a subset of dataset provided by
 
 for the sake of **reproducibility**, we will illustrate the concepts we present with examples of implementation based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on XX contracts listed in the B3. The time range starts in January 2003 and ends in August 2022. For each point in time, XX **characteristics** describe the decision in the sample. These attributes cover a wide range of topics:
 
-**valuation** (earning yields, accounting ratios); **profitability** and quality (return on equity); **momentum** and technical analysis (past returns, relative strength index); **risk** (volatilities); **estimates** (earnings-per-share); **volume** and **liquidity** (share turnover).
+**Price** (Open, High, Low, Close); **Volume**, **Time** (Date, Week of the year, Year), **Return**; **Status**; **Multiplier**; Adjust and Price.
 
 ```{r Load Library, message=FALSE, warning=FALSE, echo=TRUE}
 
