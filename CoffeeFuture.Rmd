@@ -35,13 +35,92 @@ The methods section explains the process and techniques used in this project
 
 The **label** $\mathbf{y}=y_i$ of this project are approximated by functions of features $\mathbf{X}_i=(x_{_i,1},\dots,x_{i,K})$ . The dimension of the feature matrix $X$ is $I×K$: there are $I$ **instances**, **records**, or **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables. We will write $x_i$ for one instance (one row) of $X$ or $x_k$ for one (feature) column vector of $X$.
 
-The purpose of this project is to forecast **categories** (also called **classes**), \"Buy,\" \"Neutral\" or \"Sell.\" In order to be able to perform this type of classification analysis, we create additional labels that are categorical and continuous. The
+The purpose of this project is to forecast **categories** (also called **classes**), "Buy," "Neutral" or "Sell." In order to be able to perform this type of classification analysis, we create additional labels that are categorical and continuous. The
 
 Notation type pertains to finance We will work with daily returns $r_{t,n}=p_{t,n}/p_{t-1,n}-1$
 
 computed from price data. Here t is the time index and n the asset index. Unless specified otherwise, the return is always computed over one period, though this period can sometimes be one month or one year. Whenever confusion might occur, we will specify other notations for returns.
 
-Evaluation metrics
+**Evaluation metrics**
+
+Avoiding False Positives: A Protocol
+
+1. Research Motivation: ex ante/ex post economic foundation\
+a) Does the model have a solid economic foundation?
+
+Coffee It is one of the most important commodities traded globally and one of the most popular beverages in the world. World production is spread over 55 developing countries and is conducted by about 26 million producers, cultivated in tropical and subtropical areas.
+
+The development of local organizations or instruments to help managing price risk, such as organized futures, in developing countries, like Brazil, is a important step to minimize the risk and challenges of small producers, since the larger and more liquids futures markets are located in the United States and Europe.
+
+The Futures Price Volatility is
+
+\
+b) Did the economic foundation or hypothesis exist before the research was conducted?\
+
+2\. Multiple Testing and Statistical Methods\
+a) Did the researcher keep track of all models and variables that were tried (both successful and unsuccessful) and are the researchers aware of the multiple-testing issue?\
+b) Is there a full accounting of all possible interaction variables if interaction variables are used?\
+c) Did the researchers investigate all variables set out in the research agenda or did they cut the research as soon as they found a good model?\
+
+3\. Data and Sample Choice\
+a) Do the data chosen for examination make sense? And, if other data are available, does it make sense to exclude these data?\
+b) Did the researchers take steps to ensure the integrity of the data?\
+c) Do the data transformations, such as scaling, make sense? Were they selected in advance? And are the results robust to minor changes in these transformations?\
+d) If outliers are excluded, are the exclusion rules reasonable?\
+e) If the data are winsorized, was there a good reason to do it? Was the winsorization rule chosen before the research was started? Was only one winsorization rule tried (as opposed to many)?\
+
+4\. Cross-Validation\
+a) Are the researchers aware that true out-of-sample tests are only possible in live trading?\
+b) Are steps in place to eliminate the risk of out-of-sample \"iterations\" (i.e., an in-sample model that is later modified to fit out-of-sample data)?\
+c) Is the out-of-sample analysis representative of live trading? For example, are trading costs and data revisions taken into account?\
+
+5\. Model Dynamics\
+a) Is the model resilient to structural change and have the researchers taken steps to minimize the overfitting of the model dynamics?\
+b) Does the analysis take into account the risk/likelihood of overcrowding in live trading?\
+c) Do researchers take steps to minimize the tweaking of a live model?\
+
+6\. Complexity\
+a) Does the model avoid the curse of dimensionality?\
+b) Have the researchers taken steps to produce the simplest practicable model specification?\
+c) Is an attempt made to interpret the predictions of the machine learning model rather than using it as a black box?
+
+\
+7. Research Culture\
+a) Does the research culture reward quality of the science rather than finding the winning strategy?\
+b) Do the researchers and management understand that most tests will fail?\
+c) Are expectations clear (that researchers should seek the truth not just something that works) when research is delegated?
+
+Category #1: Research Motivation
+
+Category #2: Multiple Testing and Statistical Methods
+Keep track of: what is tried, combinations of variables,
+Beware the parallel universe problem.
+
+Category #3: Sample Choice and Data
+Define the test sample ex ante.
+Ensure data quality
+Document choices in data transformations
+Do not arbitrarily exclude outliers.
+Select Winsorization level before constructing the model.
+
+Category #4: Cross-Validation
+Acknowledge out of sample is not really out of sample
+Understand iterated out of sample is not out of sample.
+Do not ignore trading costs and fees.
+
+Category #5: Model Dynamics
+Be aware of structural changes.
+Acknowledge the Heisenberg Uncertainty Principle and overcrowding.
+Refrain from tweaking the model.
+
+Category #6: Model Complexity
+Beware the curse of dimensionality.
+Pursue simplicity and regularization.
+Seek interpretable machine learning.
+
+Category #7: Research Culture
+Establish a research culture that rewards quality.
+Be careful with delegated research
 
 ## The process and techniques used
 
