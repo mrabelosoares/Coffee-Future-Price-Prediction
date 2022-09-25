@@ -39,28 +39,50 @@ The purpose of this project is to forecast **categories** (also called **classes
 
 Notation type pertains to finance We will work with daily returns $r_{t,n}=p_{t,n}/p_{t-1,n}-1$
 
+$$\begin{equation}
+\tag{
+
+}
+y_{t,i}=\left\{  \begin{array}{rll}
+-1 & \text{ if } & \hat{r}_{t,i} < r_- \\
+0 & \text{ if } & \hat{r}_{t,i} \in [r_-,r_+] \\
++1 & \text{ if } & \hat{r}_{t,i} > r_+ \\
+\end{array} \right.,
+\end{equation}$$
+
 computed from price data. Here t is the time index and n the asset index. Unless specified otherwise, the return is always computed over one period, though this period can sometimes be one month or one year. Whenever confusion might occur, we will specify other notations for returns.
 
 **Evaluation metrics**
 
 Avoiding False Positives: A Protocol
 
-1. Research Motivation: ex ante/ex post economic foundation\
+Model that makes sense economically: Renaissance Technologies Trading Strategies
+
+"If we have enough data, I know we can make predictions," Simons told a colleague.
+
+Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Edição do Kindle. 1- Mean Reversion Strategy: Buy if the close price move a certain level below their recent trend line, Sell if above certain level above and be Neutral if the price is too close of trend line.
+
+2- Stochastic Strategy: Non linear machine learning Kernel
+
+3- The Kelly Criterion: scientific gambling method Assumption: future returns depend on decisions toked on close price. The relationship between the characteristics of market and performance is largely unknown and probably time-varying. This is why ML can be useful: to detect some hidden patterns beyond the documented asset pricing anomalies. Moreover, dynamic training allows to adapt to changing market conditions.
+
+1\. Research Motivation: ex ante/ex post economic foundation\
 a) Does the model have a solid economic foundation?
 
 Coffee It is one of the most important commodities traded globally and one of the most popular beverages in the world. World production is spread over 55 developing countries and is conducted by about 26 million producers, cultivated in tropical and subtropical areas.
 
 The development of local organizations or instruments to help managing price risk, such as organized futures, in developing countries, like Brazil, is a important step to minimize the risk and challenges of small producers, since the larger and more liquids futures markets are located in the United States and Europe.
 
-The Futures Price Volatility is
+The Futures price volatility is large once coffee market has low price elasticity of demand and supply in the short run. In addition, previous studies have pointed to the existence of asymmetric price transmission within the coffee chain. Because of the concentration of roasting and retail sectors, retail prices respond faster to price increases than to price decreases, while farm prices follow more closely supply and demand conditions.
 
-\
-b) Did the economic foundation or hypothesis exist before the research was conducted?\
+b)  Did the economic foundation or hypothesis exist before the research was conducted?\
+    Price changes are commonly caused by the arrival of new information from ICO crop reports, as presented in work The Reaction of Coffee Futures Price Volatility to Crop Reports (2017)
 
 2\. Multiple Testing and Statistical Methods\
-a) Did the researcher keep track of all models and variables that were tried (both successful and unsuccessful) and are the researchers aware of the multiple-testing issue?\
-b) Is there a full accounting of all possible interaction variables if interaction variables are used?\
-c) Did the researchers investigate all variables set out in the research agenda or did they cut the research as soon as they found a good model?\
+a) Did the researcher keep track of all models and variables that were tried (both successful and unsuccessful) and are the researchers aware of the multiple-testing issue?
+
+b)  Is there a full accounting of all possible interaction variables if interaction variables are used?\
+c)  Did the researchers investigate all variables set out in the research agenda or did they cut the research as soon as they found a good model?\
 
 3\. Data and Sample Choice\
 a) Do the data chosen for examination make sense? And, if other data are available, does it make sense to exclude these data?\
@@ -71,7 +93,7 @@ e) If the data are winsorized, was there a good reason to do it? Was the winsori
 
 4\. Cross-Validation\
 a) Are the researchers aware that true out-of-sample tests are only possible in live trading?\
-b) Are steps in place to eliminate the risk of out-of-sample \"iterations\" (i.e., an in-sample model that is later modified to fit out-of-sample data)?\
+b) Are steps in place to eliminate the risk of out-of-sample "iterations" (i.e., an in-sample model that is later modified to fit out-of-sample data)?\
 c) Is the out-of-sample analysis representative of live trading? For example, are trading costs and data revisions taken into account?\
 
 5\. Model Dynamics\
@@ -92,35 +114,17 @@ c) Are expectations clear (that researchers should seek the truth not just somet
 
 Category #1: Research Motivation
 
-Category #2: Multiple Testing and Statistical Methods
-Keep track of: what is tried, combinations of variables,
-Beware the parallel universe problem.
+Category #2: Multiple Testing and Statistical Methods Keep track of: what is tried, combinations of variables, Beware the parallel universe problem.
 
-Category #3: Sample Choice and Data
-Define the test sample ex ante.
-Ensure data quality
-Document choices in data transformations
-Do not arbitrarily exclude outliers.
-Select Winsorization level before constructing the model.
+Category #3: Sample Choice and Data Define the test sample ex ante. Ensure data quality Document choices in data transformations Do not arbitrarily exclude outliers. Select Winsorization level before constructing the model.
 
-Category #4: Cross-Validation
-Acknowledge out of sample is not really out of sample
-Understand iterated out of sample is not out of sample.
-Do not ignore trading costs and fees.
+Category #4: Cross-Validation Acknowledge out of sample is not really out of sample Understand iterated out of sample is not out of sample. Do not ignore trading costs and fees.
 
-Category #5: Model Dynamics
-Be aware of structural changes.
-Acknowledge the Heisenberg Uncertainty Principle and overcrowding.
-Refrain from tweaking the model.
+Category #5: Model Dynamics Be aware of structural changes. Acknowledge the Heisenberg Uncertainty Principle and overcrowding. Refrain from tweaking the model.
 
-Category #6: Model Complexity
-Beware the curse of dimensionality.
-Pursue simplicity and regularization.
-Seek interpretable machine learning.
+Category #6: Model Complexity Beware the curse of dimensionality. Pursue simplicity and regularization. Seek interpretable machine learning.
 
-Category #7: Research Culture
-Establish a research culture that rewards quality.
-Be careful with delegated research
+Category #7: Research Culture Establish a research culture that rewards quality. Be careful with delegated research
 
 ## The process and techniques used
 
