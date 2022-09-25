@@ -15,7 +15,9 @@ if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.
 if(!require(purrr)) install.packages("purrr", repos = "http://cran.us.r-project.org")
 if(!require(zoo)) install.packages("zoo", repos = "http://cran.us.r-project.org")
 if(!require(runner)) install.packages("runner", repos = "http://cran.us.r-project.org")
-
+if(!require(quantmod)) install.packages("quantmod", repos = "http://cran.us.r-project.org")
+if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
+if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
 # Load library
 library(caret)
 library(data.table)
@@ -33,6 +35,9 @@ library(dplyr)
 library(purrr)
 library(zoo)
 library(runner)
+library(quantmod)
+library(rpart)
+library(randomForest)
 
 ##Data Clean
 
@@ -45,7 +50,6 @@ download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/b
 ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
 #WINFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "WINFUT", col_names = FALSE)
 #DOLFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "DOLFUT")
-
 
 #create data frame ICFFUT - 4/5 Arabica Coffee Futures
 DFICFFUT <- as.data.frame(ICFFUT) |> 
@@ -77,7 +81,6 @@ DFICFFUT |>
 DFICFFUT |>
   ggplot(aes(year,Close / lag(Close), group = year)) +
   geom_boxplot()
-
 
 #distribution of risk through time - weekofyear
 DFICFFUT |>
@@ -112,13 +115,69 @@ summary(profitICFFUT)
 
 sum(profitICFFUT$adjust,na.rm = TRUE)*100
 
+plot(DFICFFUT$Date, DFICFFUT$Close)
+
+getSymbols("KC=F", src = "yahoo")
+chart_Series(KC=F, TA = NULL)
 #profit by time
 profitICFFUT |> 
   ggplot(aes(Date, profit)) + 
   geom_line()
 
 
+
+#create a partition
+separation_date <- as.Date("2020-01-02")
+training_sample <- filter(DFICFFUT, Date < separation_date)
+testing_sample <- filter(DFICFFUT, Date >= separation_date)
+head(testing_sample)
+
 #defining the predictors - Model 1
+knn_fit <- knn3(Decision ~ Close + 
+                Volume +
+                OpenInterest +
+                weekofyear +
+                year+
+                Date, 
+                data = training_sample, k=5)
+knn_fit
+
+head(predict(knn_fit, testing_sample, type = "prob"))
+
+#accuracy - model 1
+y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
+confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
+
+#defining the predictors - Model 2
+fit <- rpart(Decision ~ Close + 
+               Volume +
+               OpenInterest +
+               weekofyear +
+               year+
+               Date, data = training_sample)
+plot(fit, margin = 0.1)
+text(fit, cex = 0.75)
+
+#accuracy - model 2
+y_hat_RT <- predict(fit, testing_sample, type = "class")
+confusionMatrix(y_hat_RT, testing_sample$Decision)$overall["Accuracy"]
+
+#defining the predictors - Model 3
+fit_RF <- randomForest(Decision ~ Close + 
+                      Volume +
+                      OpenInterest +
+                      weekofyear +
+                      year+
+                      Date, data = training_sample) 
+
+rafalib::mypar()
+plot(fit_RF)
+varImp(fit_RF)
+#accuracy - model 3
+y_hat_RF <- predict(fit_RF, testing_sample, type = "class")
+confusionMatrix(y_hat_RF, testing_sample$Decision)$overall["Accuracy"]
+confusionMatrix(y_hat_RF, testing_sample$Decision)
+
 #Close Price
 x_1 <- DFICFFUT$Close
 
