@@ -18,6 +18,8 @@ if(!require(runner)) install.packages("runner", repos = "http://cran.us.r-projec
 if(!require(quantmod)) install.packages("quantmod", repos = "http://cran.us.r-project.org")
 if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
 if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
+if(!require(xts)) install.packages("xts", repos = "http://cran.us.r-project.org")
+if(!require(TTR)) install.packages("TTR", repos = "http://cran.us.r-project.org")
 # Load library
 library(caret)
 library(data.table)
@@ -38,19 +40,63 @@ library(runner)
 library(quantmod)
 library(rpart)
 library(randomForest)
-
+library(xts)
+library(TTR)
 ##Data Clean
 
 #create tempfile and download
-
 dl <- tempfile()
 download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/blob/2044135ec7c5bcfb6f357374de4ede11c9382fd8/CoffeDatabase.xlsx", dl)
 
-#read file
+#read file XLSX format with decisions
 ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
+#read file XLSX format with ICF Prices
+ICFFUT_XLSX <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT_XTS")
+#Convert XLXS format to Data Frame and XTS
+DFICFFUT_XTS <- as.data.frame(ICFFUT_XLSX)
+ICFFUT_XTS <- xts(DFICFFUT_XTS[-1], order.by = as.Date(DFICFFUT_XTS$Date))
 #WINFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "WINFUT", col_names = FALSE)
 #DOLFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "DOLFUT")
 
+##Technical Indicators
+
+#Price-Based Indicators
+#moving average 5 days
+Moving_Average_5 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=5)
+
+#moving average 22 days
+Moving_Average_22 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=22)
+
+#Bollinger Bands
+Bollinger_Bands <- BBands(ICFFUT_XTS$ICFFUT.Close)
+
+#Rate of Change Oscillator
+Rate_Change_Oscillator <- ROC(ICFFUT_XTS$ICFFUT.Close, n=10)
+
+#Relative Strength Index
+Relative_Strength_Index <- RSI(ICFFUT_XTS$ICFFUT.Close)
+
+#Stochastic Oscillator / Stochastic Momentum Index
+Stochastic <- stoch(ICFFUT_XTS$ICFFUT.Close)
+
+#MACD Oscillator
+MACD <- MACD(ICFFUT_XTS$ICFFUT.Close)
+
+#merge XTS
+Full_ICFFUT <- merge(ICFFUT_XTS, 
+                     Moving_Average_5, 
+                     Moving_Average_22,
+                     Bollinger_Bands,
+                     Rate_Change_Oscillator,
+                     Relative_Strength_Index,
+                     Stochastic,
+                     MACD)
+
+#create data frame ICFFUT - 4/5 Arabica Coffee Futures
+DFICFFUT <- as.data.frame(Full_ICFFUT)
+
+
+  
 #create data frame ICFFUT - 4/5 Arabica Coffee Futures
 DFICFFUT <- as.data.frame(ICFFUT) |> 
   mutate(Decision  = as.factor(Decision),
@@ -117,8 +163,9 @@ sum(profitICFFUT$adjust,na.rm = TRUE)*100
 
 plot(DFICFFUT$Date, DFICFFUT$Close)
 
-getSymbols("KC=F", src = "yahoo")
-chart_Series(KC=F, TA = NULL)
+getSymbols("MSFT", src = "yahoo")
+chart_Series(MSFT, TA = NULL)
+
 #profit by time
 profitICFFUT |> 
   ggplot(aes(Date, profit)) + 
@@ -128,8 +175,8 @@ profitICFFUT |>
 
 #create a partition
 separation_date <- as.Date("2020-01-02")
-training_sample <- filter(DFICFFUT, Date < separation_date)
-testing_sample <- filter(DFICFFUT, Date >= separation_date)
+training_sample <- filter(profitICFFUT, Date < separation_date)
+testing_sample <- filter(profitICFFUT, Date >= separation_date)
 head(testing_sample)
 
 #defining the predictors - Model 1
@@ -147,6 +194,10 @@ head(predict(knn_fit, testing_sample, type = "prob"))
 #accuracy - model 1
 y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
 confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
+
+
+# Hit ratio
+mean(predict(knn_fit, testing_sample) * testing_sample$profit > 0)
 
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ Close + 
