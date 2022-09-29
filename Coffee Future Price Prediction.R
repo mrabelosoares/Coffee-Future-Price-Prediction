@@ -9,7 +9,6 @@ if(!require(grid)) install.packages("grid", repos = "http://cran.us.r-project.or
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 if(!require(lattice)) install.packages("lattice", repos = "http://cran.us.r-project.org")
 if(!require(gridExtra)) install.packages("gridExtra", repos = "http://cran.us.r-project.org")
-if(!require(recosystem)) install.packages("recosystem", repos = "http://cran.us.r-project.org")
 if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
 if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
 if(!require(purrr)) install.packages("purrr", repos = "http://cran.us.r-project.org")
@@ -31,7 +30,6 @@ library(grid)
 library(ggplot2)
 library(lattice)
 library(gridExtra)
-library(recosystem)
 library(readxl)
 library(dplyr)
 library(purrr)
@@ -42,6 +40,7 @@ library(rpart)
 library(randomForest)
 library(xts)
 library(TTR)
+
 ##Data Clean
 
 #create tempfile and download
@@ -55,12 +54,8 @@ ICFFUT_XLSX <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT_XTS")
 #Convert XLXS format to Data Frame and XTS
 DFICFFUT_XTS <- as.data.frame(ICFFUT_XLSX)
 ICFFUT_XTS <- xts(DFICFFUT_XTS[-1], order.by = as.Date(DFICFFUT_XTS$Date))
-#WINFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "WINFUT", col_names = FALSE)
-#DOLFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "DOLFUT")
 
-##Technical Indicators
-
-#Price-Based Indicators
+##Technical Indicators - Price-Based
 #moving average 5 days
 Moving_Average_5 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=5)
 
@@ -93,55 +88,38 @@ Full_ICFFUT <- merge(ICFFUT_XTS,
                      MACD)
 
 #create data frame ICFFUT - 4/5 Arabica Coffee Futures
-DFICFFUT <- as.data.frame(Full_ICFFUT)
+DFICFFUT <- data.frame(Date=index(Full_ICFFUT), coredata(Full_ICFFUT))
 
-
-  
 #create data frame ICFFUT - 4/5 Arabica Coffee Futures
-DFICFFUT <- as.data.frame(ICFFUT) |> 
-  mutate(Decision  = as.factor(Decision),
-         weekofyear = week(Date),
-         year = year(Date))
+CDFICFFUT <- left_join(DFICFFUT, 
+                       ICFFUT |> select(Date, Decision, OpenInterest)) |>
+  filter(Date > "2003-02-17") |> 
+  mutate(Decision  = as.factor(Decision))
+
+##Data exploration and visualization
+
+#Chart ICFFUT Price
+chart_Series(ICFFUT_XTS,type = "candlesticks")
+
+#Day without trade
+Notrade <- CDFICFFUT |> filter(ICFFUT.Volume == "0")
+Notrade
 
 #class, type and proprieties of data frame
-sapply(DFICFFUT, class)
-sapply(DFICFFUT, typeof)
-as_tibble(DFICFFUT)
-summary(DFICFFUT)
-str(DFICFFUT)
-
-#defining the outcome
-y <- DFICFFUT$Decision
+as_tibble(CDFICFFUT)
+summary(CDFICFFUT)
+str(CDFICFFUT)
 
 #distribution by decision
-DFICFFUT |>
+CDFICFFUT |>
   ggplot(aes(Decision)) +
   geom_histogram(binwidth = 1, color = "black", stat="count")
 
-#distribution of risk through time - weekofyear
-DFICFFUT |>
-  ggplot(aes(weekofyear,Close / lag(Close), group = weekofyear)) +
-  geom_boxplot()
-
-#distribution of risk through time - year
-DFICFFUT |>
-  ggplot(aes(year,Close / lag(Close), group = year)) +
-  geom_boxplot()
-
-#distribution of risk through time - weekofyear
-DFICFFUT |>
-  ggplot(aes(weekofyear,Close - lag(Close), group = weekofyear)) +
-  geom_boxplot()
-
-#distribution of risk through time - year
-DFICFFUT |>
-  ggplot(aes(year,Close - lag(Close), group = year)) +
-  geom_boxplot()
 
 #empirical optimal results - sum last 22 days
-profitICFFUT <- DFICFFUT |> 
+profitICFFUT <- CDFICFFUT |> 
   arrange(Date) |> 
-  mutate(return = Close - lag(Close) ,
+  mutate(return = ICFFUT.Close - lag(ICFFUT.Close) ,
          status = as.factor(case_when(
            Decision == lag(Decision) ~ "Hold",
            Decision != lag(Decision) ~ "Change")),
@@ -159,33 +137,21 @@ profitICFFUT <- DFICFFUT |>
            ))
 summary(profitICFFUT)
 
-sum(profitICFFUT$adjust,na.rm = TRUE)*100
-
-plot(DFICFFUT$Date, DFICFFUT$Close)
-
-getSymbols("MSFT", src = "yahoo")
-chart_Series(MSFT, TA = NULL)
-
 #profit by time
 profitICFFUT |> 
   ggplot(aes(Date, profit)) + 
   geom_line()
 
-
+#Modeling approach
 
 #create a partition
 separation_date <- as.Date("2020-01-02")
-training_sample <- filter(profitICFFUT, Date < separation_date)
-testing_sample <- filter(profitICFFUT, Date >= separation_date)
+training_sample <- filter(CDFICFFUT, Date < separation_date)
+testing_sample <- filter(CDFICFFUT, Date >= separation_date)
 head(testing_sample)
 
 #defining the predictors - Model 1
-knn_fit <- knn3(Decision ~ Close + 
-                Volume +
-                OpenInterest +
-                weekofyear +
-                year+
-                Date, 
+knn_fit <- knn3(Decision ~ ., 
                 data = training_sample, k=5)
 knn_fit
 
@@ -195,31 +161,22 @@ head(predict(knn_fit, testing_sample, type = "prob"))
 y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
 confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
 
-
 # Hit ratio
 mean(predict(knn_fit, testing_sample) * testing_sample$profit > 0)
 
 #defining the predictors - Model 2
-fit <- rpart(Decision ~ Close + 
-               Volume +
-               OpenInterest +
-               weekofyear +
-               year+
-               Date, data = training_sample)
+fit <- rpart(Decision ~ ., data = training_sample)
 plot(fit, margin = 0.1)
 text(fit, cex = 0.75)
 
 #accuracy - model 2
 y_hat_RT <- predict(fit, testing_sample, type = "class")
 confusionMatrix(y_hat_RT, testing_sample$Decision)$overall["Accuracy"]
+confusionMatrix(y_hat_RT, testing_sample$Decision)
+
 
 #defining the predictors - Model 3
-fit_RF <- randomForest(Decision ~ Close + 
-                      Volume +
-                      OpenInterest +
-                      weekofyear +
-                      year+
-                      Date, data = training_sample) 
+fit_RF <- randomForest(Decision ~., data = training_sample) 
 
 rafalib::mypar()
 plot(fit_RF)
@@ -229,305 +186,3 @@ y_hat_RF <- predict(fit_RF, testing_sample, type = "class")
 confusionMatrix(y_hat_RF, testing_sample$Decision)$overall["Accuracy"]
 confusionMatrix(y_hat_RF, testing_sample$Decision)
 
-#Close Price
-x_1 <- DFICFFUT$Close
-
-#create a partition
-set.seed(1, sample.kind="Rounding")
-test_index <- createDataPartition(y, times = 1, p = 0.5, list = FALSE)
-
-#test_set and train_set
-test_set <- DFICFFUT[test_index, ]
-train_set <- DFICFFUT[-test_index, ]
-
-#outcome by chance
-y_hat <- sample(c("Buy", "Neutral", "Sell"), 
-                4468, replace = TRUE) |>
-  factor(levels = levels(test_set$Decision))
-y_hat
-
-y_hat <- profitICFFUT |>
-  mutate(return = Close - lag(Close) ,
-         status = as.factor(case_when(
-           y_hat == lag(y_hat) ~ "Hold",
-           y_hat != lag(y_hat) ~ "Change")),
-         multiplier = case_when(
-           status == "Change" & lag(y_hat) == "Neutral" ~ 0,
-           status == "Hold" & y_hat == "Neutral" ~ 0,
-           status == "Change" & lag(y_hat) == "Buy" ~ 1,
-           status == "Hold" & y_hat == "Buy" ~ 1,
-           status == "Change" & lag(y_hat) == "Sell" ~ -1,
-           status == "Hold" & y_hat == "Sell" ~ -1),
-         adjust = return * multiplier,
-         profit = case_when(
-           Decision == "Neutral" ~ 0,
-           Decision != "Neutral" ~ sum_run(adjust, k=22)
-         ))
-sum(y_hat$profit, na.rm = TRUE)
-#accuracy test
-mean(y_hat$multiplier == profitICFFUT$multiplier, na.rm = TRUE)
-
-
-DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
-
-#defining the predictors - Model 2
-
-#Close Price
-x_1 <- DFICFFUT$Close
-#Time in week of the year
-X_2 <- week(DFICFFUT$Date)
-
-#mean of week of the year
-DFICFFUT %>% group_by(Decision) %>% summarize(mean(Close), sd(Close))
-
-#conditional outcome - Model 2
-y_hat <- case_when(
-  x >= 510 ~ "Buy",
-  x <= 468 ~ "Sell",
-  x > 468 & x < 510 ~ "Neutral")
-summary(y_hat)
-
-#accuracy test
-mean(y_hat == DFICFFUT$Decision)
-
-
-#Day without trade
-Notrade <- DFICFFUT |> filter(`Volume` == "0")
-Notrade
-
-
-#defining the predictors - Model 3
-
-#Close Price
-x_1 <- DFICFFUT$Close
-#Time in week of the year
-X_2 <- week(DFICFFUT$Date)
-
-
-#distribution 
-
-returnICFFUT <- DFICFFUT |> 
-  arrange(Date) |> 
-  mutate(return = Close - lag(Close) ,
-         multiplier = case_when(
-          Decision == "Neutral" ~ 0,
-          Decision == "Buy" ~ 1,
-          Decision == "Sell" ~ -1) ,
-         adjust = return * multiplier)
-summary(returnICFFUT)
-
-profityear <- returnICFFUT |>
-  group_by(year(Date)) |>
-  mutate(Profit = sum(adjust, na.rm = TRUE))
-summary(profityear)
-
-#lag 1, 5, 10, 20 days in points
-returnICFFUTPTS <- returnICFFUT |> 
-  arrange(Date) |> 
-  mutate(ret = Close - lag(Close),
-         ret5 = Close - lag(Close, n = 5) ,
-         ret10 = Close - lag(Close, n = 10),
-         ret22 = Close - lag(Close, n = 22))
-summary(returnICFFUTPTS)
-
-#lag 1, 5, 10, 20 days in percent
-returnICFFUTPER <- returnICFFUT |> 
-  arrange(Data) |> 
-  mutate(ret = Fechamento / lag(Fechamento) - 1,
-         ret5 = Fechamento / lag(Fechamento, n = 5) - 1,
-         ret10 = Fechamento / lag(Fechamento, n = 10) - 1,
-         ret22 = Fechamento / lag(Fechamento, n = 22) - 1)
-summary(returnICFFUTPER)
-
-
-#Outcome data visualization in points
-p1 <- returnICFFUTPTS |>
-  ggplot(aes(x = year(Data), y = ret)) +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-  
-p5 <- returnICFFUTPTS |>
-  ggplot(aes(x = year(Data), y = ret5)) +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-  
-p10 <- returnICFFUTPTS |>
-  ggplot(aes(x = year(Data), y = ret10))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-
-p22 <- returnICFFUTPTS |>
-  ggplot(aes(x = year(Data), y = ret22))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-
-gridExtra::grid.arrange(p1, p5, p10, p22,
-                        nrow = 2, 
-                        top = "Return by trade days, year by year")
-
-p2003 <- returnICFFUTPTS |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2003) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-p2003
-
-p2007 <- returnICFFUTPTS |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2007) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-p2007
-
-p2012 <- returnICFFUTPTS |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2012) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-p2012
-
-p2020 <- returnICFFUTPTS |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2020) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-p2020
-
-
-p2021 <- returnICFFUTPTS |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2021) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-p2021
-
-p2022 <- returnICFFUTPTS |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2022) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 50, col="red") +
-  geom_hline(yintercept = -50, col= "red") +
-  geom_point()
-p2022
-
-#Outcome data visualization in percent
-p1 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret, group = year(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-
-p5 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret5, group = year(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-
-p10 <- returnICFFUTPER |>
-  ggplot(aes(x = year(Data), y = ret10, group = year(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-
-p22 <- returnICFFUTPER |>
-  ggplot(aes(x = month(Data), y = ret22, group = month(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-p22
-
-gridExtra::grid.arrange(p1, p5, p10, p22,
-                        nrow = 2, 
-                        top = "Return by trade days, year by year")
-
-
-pweek22 <- returnICFFUTPER |>
-  ggplot(aes(x = week(Data), y = ret22, group = week(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-pweek22
-
-pweek10 <- returnICFFUTPER |>
-  ggplot(aes(x = week(Data), y = ret10, group = week(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-pweek10
-
-pweekdays <- returnICFFUTPER |>
-  ggplot(aes(x = weekdays(Data), y = ret, group = weekdays(Data)))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-pweekdays
-
-
-p2003 <- returnICFFUTPER |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2021) |>
-  ggplot(aes(x = Data, y = ret10))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
-p2003
-
-p2007 <- returnICFFUTPER |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2007) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
-p2007
-
-p2012 <- returnICFFUTPER |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2012) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
-p2012
-
-p2020 <- returnICFFUTPER |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2020) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
-p2020
-
-
-p2021 <- returnICFFUTPER |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2021) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_point()
-p2021
-
-p2022 <- returnICFFUTPER |>
-  group_by(year(Data)) |>
-  filter(year(Data) == 2022) |>
-  ggplot(aes(x = Data, y = ret5))  +
-  geom_hline(yintercept = 0.1, col="red") +
-  geom_hline(yintercept = -0.1, col= "red") +
-  geom_boxplot()
-p2022
