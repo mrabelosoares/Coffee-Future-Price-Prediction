@@ -160,9 +160,13 @@ head(predict(knn_fit, testing_sample, type = "prob"))
 #accuracy - model 1
 y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
 confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
+cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
+cm1[["byClass"]][ , "Precision"]
+cm1[["byClass"]][ , "Recall"]
+cm1[["byClass"]][ , "F1"]
 
-# Hit ratio
-mean(predict(knn_fit, testing_sample) * testing_sample$profit > 0)
+#F1 Score
+recall(y_hat_knn, testing_sample$Decision)
 
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
@@ -172,8 +176,10 @@ text(fit, cex = 0.75)
 #accuracy - model 2
 y_hat_RT <- predict(fit, testing_sample, type = "class")
 confusionMatrix(y_hat_RT, testing_sample$Decision)$overall["Accuracy"]
-confusionMatrix(y_hat_RT, testing_sample$Decision)
-
+cm2 <- confusionMatrix(y_hat_RT, testing_sample$Decision)
+cm2[["byClass"]][ , "Precision"]
+cm2[["byClass"]][ , "Recall"]
+cm2[["byClass"]][ , "F1"]
 
 #defining the predictors - Model 3
 fit_RF <- randomForest(Decision ~., data = training_sample) 
