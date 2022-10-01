@@ -165,9 +165,6 @@ cm1[["byClass"]][ , "Precision"]
 cm1[["byClass"]][ , "Recall"]
 cm1[["byClass"]][ , "F1"]
 
-#F1 Score
-recall(y_hat_knn, testing_sample$Decision)
-
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
 plot(fit, margin = 0.1)
@@ -190,5 +187,8 @@ varImp(fit_RF)
 #accuracy - model 3
 y_hat_RF <- predict(fit_RF, testing_sample, type = "class")
 confusionMatrix(y_hat_RF, testing_sample$Decision)$overall["Accuracy"]
-confusionMatrix(y_hat_RF, testing_sample$Decision)
+cm3 <- confusionMatrix(y_hat_RF, testing_sample$Decision)
+cm3[["byClass"]][ , "Precision"]
+cm3[["byClass"]][ , "Recall"]
+cm3[["byClass"]][ , "F1"]
 
