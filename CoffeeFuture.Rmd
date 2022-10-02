@@ -1,13 +1,14 @@
 ---
-title: 'Coffee Future Price Pediction Project: ICFUT B3 Dataset'
-subtitle: 'HarvardX - PH125.9x Data Science: Capstone Course'
+title: 'Coffee Future Price Pediction Project: ICFFUT B3 Dataset'
 author: "Mauricio Rabelo Soares"
 date: "03 set 2022"
 output:
   pdf_document:
-      latex_engine: lualatex
+    latex_engine: lualatex
+  word_document: default
   html_document:
     df_print: paged
+subtitle: "HarvardX - PH125.9x Data Science: Capstone Course"
 bibliography: references.bib
 ---
 
@@ -17,38 +18,35 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Introduction
 
-A Machine Learning for Factor Investing is a equity **investment strategies** that are built on **firm characteristics**, the goal of is this approach is to determine the model that maps the time-t characteristics of firms to their future performance.[^1] Factor investing is a subfield of a large discipline that encompasses asset allocation, quantitative trading and wealth management. Its premise is that differences in the returns of firms can be explained by the characteristics of these firms. In this project we use a similar approach but, instead a firm performance, our outcome is the 4/5 Arabica Coffee Futures contract performance traded at B3, which ticker is ICF.[^2] The goal of this project is to create a decision trade system, which result of the last 22 trade days is positive, or $r_m$ \> 0, using all the tools we have learn throughout the multi-part course in HarvardX's Data Science Professional Certificate series.
+A Machine Learning for Factor Investing is a equity **investment strategies** that are built on **firm characteristics**, the goal of this approach is to determine the model that maps the time-t characteristics of firms to their future performance.[^1] Factor investing is a subfield of a large discipline that encompasses asset allocation, quantitative trading and wealth management. Its premise is that differences in the returns of firms can be explained by the characteristics of these firms. In this project we use a similar approach but, instead a firm performance, our outcome is the 4/5 Arabica Coffee Futures contract performance traded at B3, which ticker is ICF.[^2] The goal of this project is to create a decision trade system, which balanced accuracy, or F1 score, is above 50%, [^3]using all the tools we have learn throughout the multi-part course in HarvardX's Data Science Professional Certificate series. For this challenge we going to use a dataset provided by the Nelogica and Clear[^4]. The dataset begin in January 2003 and has **4435 decisions** applied to **1 asset** with **20 features**.
 
 [^1]: <http://www.mlfactor.com/index.html>
 
 [^2]: <https://www.b3.com.br/en_us/products-and-services/trading/commodities/product-sheet-8AE490C96D41D3A2016D46017EC97262.htm>
 
-As presented in the Machine Learning course [\^2] [\^3], a recommendation systems for a movie use ***ratings*** **(*y~u,i~*)** that ***users*** **(*u*)** have given to some items, or ***movies*** **(*i*)**, to make specific recommendations to specific user. In this model, movies for which a high rating is predicted for a given user are then recommended to that user.
+[^3]: "The mean squared error is usually hard to interpret. It's not easy to map an error on returns into the impact on investment decisions. The hit ratio is a more intuitive indicator because it evaluates the proportion of correct guesses (and hence profitable investments). Obviously, it is not perfect: 55% of small gains can be mitigated by 45% of large losses. Nonetheless, it is a popular metric and moreover it corresponds to the usual accuracy measure often computed in binary classification exercises. Here, an accuracy of 0.542 is satisfactory. Even if any number above 50% may seem valuable, it must not be forgotten that transaction costs will curtail benefits. Hence, the benchmark threshold is probably at least at 52%."
 
-For this challenge we going to use a dataset provided by the Nelogica and Clear[^3]. The dataset begin in January 2003 and has **4468 decisions** applied to **1 asset** with **X features**.
-
-[^3]: <https://corretora.clear.com.br/plataformas/profit-trader-clear/>
+[^4]: <https://corretora.clear.com.br/plataformas/profit-trader-clear/>
 
 # Methods
 
-The methods section explains the process and techniques used in this project
+The methods section explains the process and techniques used in this project, in the first part, then explains the data cleaning used to extract and clean the data, in the second part. In the third part of this section we present the data exploration and visualization of the data to gain some insights. The fourth, and last part of this section, we show the modeling approach used in this project.
 
-The **label** $\mathbf{y}=y_i$ of this project are approximated by functions of features $\mathbf{X}_i=(x_{_i,1},\dots,x_{i,K})$ . The dimension of the feature matrix $X$ is $I×K$: there are $I$ **instances**, **records**, or **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables. We will write $x_i$ for one instance (one row) of $X$ or $x_k$ for one (feature) column vector of $X$.
+## The process and techniques used
+
+The decision trade system is similar to a **decision support system** (**DSS**) which is an interactive software-based system intended to help decision makers (future contract trader) compile useful information from a combination of raw data, documents, and personal knowledge, or business models to identify and solve problems and make decisions[^5]. The future trader decisions could be **buy** the contract, **sell** or not get in a position, what is the same to be **neutral** in a asset, this decisions will be our **outcome** $\mathbf{y}=y_t$.
+
+[^5]: <https://en.wikipedia.org/wiki/Decision_support_system>
+
+Every trade decision taken, in a future market, occur in a certain time $t$, in a specific contract and organized marked, for a unique value. For this project the contract is the 4/5 Arabica Coffee Futures traded at B3, which ticker is ICF, and are available for march, may, july, september and december. The ICFFUT is the representative time-series of current contract and some of thus features will be our the dataset.
+
+The **outcome** $\mathbf{y}=y_t$ of this project are the decisions made daily on the close price of ICFFUT. The ICFFUT is the
+
+by functions of features $\mathbf{X}_i=(x_{_i,1},\dots,x_{i,K})$ . The dimension of the feature matrix $X$ is $I×K$: there are $I$ **instances**, **records**, or **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables. We will write $x_i$ for one instance (one row) of $X$ or $x_k$ for one (feature) column vector of $X$.
 
 The purpose of this project is to forecast **categories** (also called **classes**), "Buy," "Neutral" or "Sell." In order to be able to perform this type of classification analysis, we create additional labels that are categorical and continuous. The
 
 Notation type pertains to finance We will work with daily returns $r_{t,n}=p_{t,n}/p_{t-1,n}-1$
-
-$$\begin{equation}
-\tag{
-
-}
-y_{t,i}=\left\{  \begin{array}{rll}
--1 & \text{ if } & \hat{r}_{t,i} < r_- \\
-0 & \text{ if } & \hat{r}_{t,i} \in [r_-,r_+] \\
-+1 & \text{ if } & \hat{r}_{t,i} > r_+ \\
-\end{array} \right.,
-\end{equation}$$
 
 computed from price data. Here t is the time index and n the asset index. Unless specified otherwise, the return is always computed over one period, though this period can sometimes be one month or one year. Whenever confusion might occur, we will specify other notations for returns.
 
@@ -58,9 +56,7 @@ Avoiding False Positives: A Protocol
 
 Model that makes sense economically: Renaissance Technologies Trading Strategies
 
-"If we have enough data, I know we can make predictions," Simons told a colleague.
-
-Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Edição do Kindle. 1- Mean Reversion Strategy: Buy if the close price move a certain level below their recent trend line, Sell if above certain level above and be Neutral if the price is too close of trend line.
+1- Mean Reversion Strategy: Buy if the close price move a certain level below their recent trend line, Sell if above certain level above and be Neutral if the price is too close of trend line.
 
 2- Stochastic Strategy: Non linear machine learning Kernel
 
@@ -126,10 +122,6 @@ Category #6: Model Complexity Beware the curse of dimensionality. Pursue simplic
 
 Category #7: Research Culture Establish a research culture that rewards quality. Be careful with delegated research
 
-## The process and techniques used
-
-Recommendation systems are particularly useful when an individual needs to choose an item from a potentially overwhelming number of items that a service may offer. The recommendations system build in this project are made
-
 ## Data cleaning
 
 For this project we going to use a subset of dataset provided by
@@ -138,153 +130,34 @@ for the sake of **reproducibility**, we will illustrate the concepts we present 
 
 **Price** (Open, High, Low, Close); **Volume**, **Time** (Date, Week of the year, Year), **Return**; **Status**; **Multiplier**; Adjust and Price.
 
-```{r Load Library, message=FALSE, warning=FALSE, echo=TRUE}
-
-# Load library
-
-
-```
-
-```{r Creat and clean the dataset, message=FALSE, warning=FALSE, echo=TRUE}
-options(timeout=100)
-#create tempfile and download
-
-
-#read the file and give name to columns
-ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
-                 col.names = c("userId", "movieId", "rating", "timestamp"))
-movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
-colnames(movies) <- c("movieId", "title", "genres")
-
-#create data frame movielens
-movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
-                                           title = as.character(title),
-                                           genres = as.character(genres))
-movielens <- left_join(ratings, movies, by = "movieId")
-
-#remove temporary files
-rm(dl, ratings, movies)
-
-```
-
 ## Data exploration and visualization
 
 The exploration and visualization of the data provide insightful information about the users, the movies and ratings. The first 5 rows of the dataset that we use in this project is presented in table 1. The columns `movieId`, `userId` and `rating` are the variable of interest.
 
-```{r The first 5 rows of the dataset, echo=TRUE, message=FALSE, warning=FALSE}
-knitr::kable(head(movielens %>% as_tibble(),5),
-             caption = "The first 5 rows of the dataset movielens",
-             align = "cccccc",
-             position = "h") %>%
-  kable_styling(latex_options = "scale_down")
-```
-
 The variables, `movieId`, `userId` and `rating`, that is going to be used to build the model is presented as a matrix in the figure 1. The figure have the movies (`moveId`) in the x axis, the users in the y axis (`userId`), and the respective rating (`rating`). The matrix, extract from a sample of 50 users and 50 movies, provide some insights about the behavior of some users, the preference for some movies, and the sparsity of the matrix. The goal of this project is to fill the blank spaces with a rate.
-
-```{r Matrix users x movies x rating, echo=TRUE, message=FALSE, warning=FALSE,out.width = "50%",fig.align='center'}
-#matrix users x movies x rating
-set.seed(1, sample.kind="Rounding")
-users <- sample(unique(movielens$userId), 50)
-movielens %>% filter(userId %in% users) %>% 
-  select(userId, movieId, rating) %>%
-  spread(movieId, rating) %>% select(sample(ncol(.), 50)) %>% 
-  as.matrix() %>% t(.) %>%
-  image.plot(1:50, 1:50,. , 
-             nlevel=9,
-             xlab="Movies", 
-             ylab="Users", 
-             main= "Matrix: users x movies x rating",
-             out.width = "50%")
-```
 
 To see a potential flaw in the data we make a slice of the top 5 most rated movies and most active users. The unique users that provided ratings, the unique movies that were rated and the unique rating provided by a unique user to a unique movie, are presented to illustrate the possible rating matrix $users \times movies$ = $10677 \times 69878 = 746087406$ and the realized rating matrix $10000054$, or 1.34% of points of the matrix is filled. The extremes values confirm that some users are much more actives than others, the most active user rated more than 50% of the total unique movies, and some movies have been rated for more than 1/3 of the total unique users.
 
-```{r Top 5 most rating movies and users, unique variables, echo=TRUE, message=FALSE, warning=FALSE, out.width = "60%",fig.align='center'}
-# Unique users, movies, rating
-p0 <- tableGrob(movielens %>% summarize(n_users = n_distinct(userId), 
-                                  n_movies = n_distinct(movieId),
-                                  n_rating = length(rating)))
-
-# Top 5 movies
-p1 <- movielens %>%
-  group_by(title) %>%
-  summarize(count = n()) %>%
-  arrange(-count) %>%
-  top_n(5, count) %>%
-  ggplot(aes(count, reorder(title, count))) +
-  geom_bar(color = "black", fill = "#999999", stat = "identity") +
-  geom_text(aes(label=count), position=position_dodge(width=0.9), hjust=1.5) +
-  xlab("Number of Ratings") +
-  ylab("Movies") +
-  theme_bw()
-
-# Top 5 users
-p2 <- movielens %>%
-  group_by(userId) %>%
-  summarize(count = n()) %>%
-  arrange(-count) %>%
-  top_n(5, count) %>%
-  ggplot(aes(count, reorder(userId, count))) +
-  geom_bar(color = "black", fill = "#999999", stat = "identity") +
-  geom_text(aes(label=count), position=position_dodge(width=0.9), hjust=1.5) +
-  xlab("Number of Ratings") +
-  ylab("Users") +
-  theme_bw()
-
-#Top 5 most rating movies and users, unique variables
-gridExtra::grid.arrange(p1,
-               arrangeGrob (p0, p2, ncol = 2), 
-               nrow = 2, 
-               top = "Top 5 most rating movies and users, unique variables")
-
-```
-
 The dataset distribution presented trough histograms provide some insights about the general proprieties of the data. As showed in the slice before some movies get rated more than others, and some user are more active than others.
-
-```{r distribution of movies and user, message=FALSE,echo=TRUE, warning=FALSE,out.width = "60%",fig.align='center'}
-
-p3 <- movielens %>% 
-  count(movieId) %>% 
-  ggplot(aes(n)) + 
-  geom_histogram(bins = 100, color = "black", fill="#999999") + 
-  scale_x_log10() + 
-  ggtitle("Movies")
-p4 <- movielens %>% 
-  count(userId) %>% 
-  ggplot(aes(n)) + 
-  geom_histogram(bins = 100, color = "black", fill="#999999") + 
-  scale_x_log10() + 
-  ggtitle("Users")
-gridExtra::grid.arrange(p3, p4, nrow = 2)
-
-```
 
 ## Modeling approach
 
 The recommendation system is better as its error has decreased, for this project the error is the typical error we make when predicting a movie rating $\left( \hat{y}_{u,i} - y_{u,i} \right)$. The loss function used to evaluate the models is based on the residual mean squared error ($RMSE$) on a test set. The definition of $RMSE$ includes $N$ , the number of user/movie combination, and the sum occurring over all these combination. In this case the Loss function is: $$
-\mbox{RMSE} = \sqrt{\frac{1}{N} \sum_{u,i}^{} \left( \hat{y}_{u,i} - y_{u,i} \right)^2 }
+F1=\frac{1}{\frac{\beta^2}{1+\beta^2}\frac{1}{\mbox{recall}} +
+    \frac{1}{1+\beta^2}\frac{1}{\mbox{precision}} }
 $$
-
-```{r RMSE, message=FALSE, warning=FALSE, echo=TRUE}
-
-RMSE <- function(true_ratings, predicted_ratings){
-  sqrt(mean((true_ratings - predicted_ratings)^2))
-}
-```
 
 The model which $RMSE = 0$ is a perfect model prediction, or without errors. For this project the reported $RMSE < 0.86490$ is the goal. The $RMSE > 1$ means our error is larger than one star, which means a bad model.
 
 ### Machine Learning
 
+"If we have enough data, I know we can make predictions," Simons told a colleague.
+
+Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Edição do Kindle.
+
 The machine learning decisions are based on algorithms build with data, so for this project the dataset XXXXX are going to be used to train and test the model. The train_set and test_set are build trough function `createDataPartition` as presented:
 
-```{r Create data partition train_set and temp, message=FALSE, warning=FALSE, echo=TRUE,}
-
-
-
-```
-
-### Naive approach
+### k-Nearest Neighbour Classification approach
 
 The simplest model to recommend a movie to any user, is the model that predict the same rate $\mu$ for all movies regardless of user. In the naive approach the variation of the differences is random, and the independent error $\epsilon_{u,i}$ centered at 0. The model looks like:
 
@@ -294,61 +167,17 @@ $$
 
 The average of all ratings is the estimate that minimize the $RMSE$, and if we fill the blank cells in the matrix with the $\mu$ we obtain the $\varepsilon_{u,i}$.
 
-```{r Model 1 - Naive_rmse, echo=TRUE, message=FALSE, warning=FALSE}
-#Average of all ratings
+### Recursive Partitioning and Regression Trees approach
 
+The values of ${b}_i$ and ${b}_u$ that minimize the full model and the code to calculate the $RMSE$ is presented below.Finally we achieve our goal, the $RMSE$ is lower than 0.86490. But can we do better?
 
-# Model 1 - Naive_rmse
+### Classification and Regression with Random Forest approach
 
-```
-
-### Bias approach
-
-```{r Lambda, echo=TRUE, message=FALSE, warning=FALSE, out.width = "70%",fig.align='center'}
-# Model 4 Regularization and RMSE
-
-```
-
-The values of ${b}_i$ and ${b}_u$ that minimize the full model and the code to calculate the $RMSE$ is presented below.
-
-```{r Model 4, echo=TRUE, message=FALSE, warning=FALSE, out.width = "70%",fig.align='center'}
-#minimize the full model
-lambdas <- seq(0, 10, 0.25)
-
-```
-
-Finally we achieve our goal, the $RMSE$ is lower than 0.86490. But can we do better?
-
-### Matrix Factorization approach
-
-A matrix Factorization is the last approach to solve recommendation system problem presented in this
-
-```{r Model 5 Matrix Factorization using recosystem, echo=TRUE, message=FALSE, warning=FALSE, results = FALSE}
-# Model 5 Matrix Factorization using recosystem
-
-```
-
-```{r Model 5 RMSE, echo=TRUE, message=FALSE, warning=FALSE}
-# Model 5 RMSE
-
-```
-
-The model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
+A matrix Factorization is the last approach to solve recommendation system problem presented in thisThe model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
 
 # Results
 
-This section presents the modeling results and discusses the model performance of the `movielens` data frame. The code below provided by HarvardX and create the `edx` and `validation` datasets that will be used to train and test our final algorithm.
-
-```{r Final validation, echo=TRUE, message=FALSE, warning=FALSE, results = FALSE}
-
-```
-
-```{r Final prediction, echo=TRUE, message=FALSE, warning=FALSE}
-# Final prediction
-
-```
-
-The final results of matrix factorization is a $RMSE$ of 0.78.
+This section presents the modeling results and discusses the model performance of the `movielens` data frame. The code below provided by HarvardX and create the `edx` and `validation` datasets that will be used to train and test our final algorithm.a $RMSE$ of 0.78.
 
 # Conclusion
 
