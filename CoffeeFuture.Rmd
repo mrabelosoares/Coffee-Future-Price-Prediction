@@ -34,21 +34,78 @@ The methods section explains the process and techniques used in this project, in
 
 ## The process and techniques used
 
-The decision trade system is similar to a **decision support system** (**DSS**) which is an interactive software-based system intended to help decision makers (future contract trader) compile useful information from a combination of raw data, documents, and personal knowledge, or business models to identify and solve problems and make decisions[^5]. The future trader decisions could be **buy** the contract, **sell** or not get in a position, what is the same to be **neutral** in a asset, this decisions will be our **outcome** $\mathbf{y}=y_t$.
+The decision trade system is similar to a **decision support system** (**DSS**) which is an interactive software-based system intended to help decision makers (future contract trader) compile useful information from a combination of raw data, documents, and personal knowledge, or business models to identify and solve problems and make decisions[^5]. The future trader decisions could be **buy** the contract, **sell** or not get in a position, what is the same to be **neutral** in a asset, this decisions will be our **outcome** $\mathbf{y}=y_t$, which is categorical.
 
 [^5]: <https://en.wikipedia.org/wiki/Decision_support_system>
 
-Every trade decision taken, in a future market, occur in a certain time $t$, in a specific contract and organized marked, for a unique value. For this project the contract is the 4/5 Arabica Coffee Futures traded at B3, which ticker is ICF, and are available for march, may, july, september and december. The ICFFUT is the representative time-series of current contract and some of thus features will be our the dataset.
+Every trade decision taken, in a future market, occur in a certain time $t$, in a specific contract and organized marked, for a unique value. For this project the contract is the 4/5 Arabica Coffee Futures traded at B3, which ticker is ICF, and are available for march, may, july, september and december. The ICFFUT is the representative time-series of current contract and some of thus features will be our the dataset. The dimension of the feature matrix $X$ is $T×K$: where $T$ are daily **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables.
 
-The **outcome** $\mathbf{y}=y_t$ of this project are the decisions made daily on the close price of ICFFUT. The ICFFUT is the
+The decision trade system build in this project are made using a similar process and techniques presented at [@coqueret2020a] and some approaches used by Renaissance Technologies.[^6] The backtesting protocol propose by [@arnott2018] are used as reference to evaluate the model.
 
-by functions of features $\mathbf{X}_i=(x_{_i,1},\dots,x_{i,K})$ . The dimension of the feature matrix $X$ is $I×K$: there are $I$ **instances**, **records**, or **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables. We will write $x_i$ for one instance (one row) of $X$ or $x_k$ for one (feature) column vector of $X$.
+[^6]: <https://www.youtube.com/watch?v=lji-jNsXmAM>
 
-The purpose of this project is to forecast **categories** (also called **classes**), "Buy," "Neutral" or "Sell." In order to be able to perform this type of classification analysis, we create additional labels that are categorical and continuous. The
+    Renaissance Technologies - Trading Strategies Revealed \| A Documentary
 
-Notation type pertains to finance We will work with daily returns $r_{t,n}=p_{t,n}/p_{t-1,n}-1$
+The process begin with the download, then read the data and create some extensions using the Close price. After the data cleaning we explore the data to gain some insight trough visualization and selected table. This insights is the basis of the modelling approach of this project, that have 3 non linear algorithms: k-Nearest Neighbour Classification, Recursive Partitioning and Regression Trees and Classification and Regression with Random Forest
 
-computed from price data. Here t is the time index and n the asset index. Unless specified otherwise, the return is always computed over one period, though this period can sometimes be one month or one year. Whenever confusion might occur, we will specify other notations for returns.
+## Data cleaning
+
+For this project we going to use a subset of dataset provided by Nelogica and Clear, and for the sake of **reproducibility**, we will illustrate the concepts based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on 1 contract listed in the B3, which the time range starts in January 2003 and ends in August 2022. For each point in time, 19 **characteristics** describe the decision in the sample. These attributes cover a wide range of topics:
+
+**Price** (Open, High, Low, Close); **Volume**, **Time** (Date, Week of the year, Year), **Return**; **Status**; **Multiplier**; Adjust and Price.
+
+## Data exploration and visualization
+
+The exploration and visualization of the data provide insightful information about the users, the movies and ratings. The first 5 rows of the dataset that we use in this project is presented in table 1. The columns `movieId`, `userId` and `rating` are the variable of interest.
+
+The variables, `movieId`, `userId` and `rating`, that is going to be used to build the model is presented as a matrix in the figure 1. The figure have the movies (`moveId`) in the x axis, the users in the y axis (`userId`), and the respective rating (`rating`). The matrix, extract from a sample of 50 users and 50 movies, provide some insights about the behavior of some users, the preference for some movies, and the sparsity of the matrix. The goal of this project is to fill the blank spaces with a rate.
+
+To see a potential flaw in the data we make a slice of the top 5 most rated movies and most active users. The unique users that provided ratings, the unique movies that were rated and the unique rating provided by a unique user to a unique movie, are presented to illustrate the possible rating matrix $users \times movies$ = $10677 \times 69878 = 746087406$ and the realized rating matrix $10000054$, or 1.34% of points of the matrix is filled. The extremes values confirm that some users are much more actives than others, the most active user rated more than 50% of the total unique movies, and some movies have been rated for more than 1/3 of the total unique users.
+
+The dataset distribution presented trough histograms provide some insights about the general proprieties of the data. As showed in the slice before some movies get rated more than others, and some user are more active than others.
+
+## Modeling approach
+
+The recommendation system is better as its error has decreased, for this project the error is the typical error we make when predicting a movie rating $\left( \hat{y}_{u,i} - y_{u,i} \right)$. The loss function used to evaluate the models is based on the residual mean squared error ($RMSE$) on a test set. The definition of $RMSE$ includes $N$ , the number of user/movie combination, and the sum occurring over all these combination. In this case the Loss function is: $$
+F1=\frac{1}{\frac{\beta^2}{1+\beta^2}\frac{1}{\mbox{recall}} +
+    \frac{1}{1+\beta^2}\frac{1}{\mbox{precision}} }
+$$
+
+The model which $RMSE = 0$ is a perfect model prediction, or without errors. For this project the reported $RMSE < 0.86490$ is the goal. The $RMSE > 1$ means our error is larger than one star, which means a bad model.
+
+### Machine Learning
+
+"If we have enough data, I know we can make predictions," Simons told a colleague.
+
+Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Edição do Kindle.
+
+The machine learning decisions are based on algorithms build with data, so for this project the dataset XXXXX are going to be used to train and test the model. The train_set and test_set are build trough function `createDataPartition` as presented:
+
+### k-Nearest Neighbour Classification approach
+
+The simplest model to recommend a movie to any user, is the model that predict the same rate $\mu$ for all movies regardless of user. In the naive approach the variation of the differences is random, and the independent error $\epsilon_{u,i}$ centered at 0. The model looks like:
+
+$$
+Y_{u,i} = \mu + \varepsilon_{u,i}
+$$
+
+The average of all ratings is the estimate that minimize the $RMSE$, and if we fill the blank cells in the matrix with the $\mu$ we obtain the $\varepsilon_{u,i}$.
+
+### Recursive Partitioning and Regression Trees approach
+
+The values of ${b}_i$ and ${b}_u$ that minimize the full model and the code to calculate the $RMSE$ is presented below.Finally we achieve our goal, the $RMSE$ is lower than 0.86490. But can we do better?
+
+### Classification and Regression with Random Forest approach
+
+A matrix Factorization is the last approach to solve recommendation system problem presented in thisThe model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
+
+# Results
+
+This section presents the modeling results and discusses the model performance of the `movielens` data frame. The code below provided by HarvardX and create the `edx` and `validation` datasets that will be used to train and test our final algorithm.a $RMSE$ of 0.78.
+
+# Conclusion
+
+The recommendation system, developed in this project, provide suggestions for items that are most pertinent to a particular user. The goal of this project was achieved and the $RMSE$ of matrix factorization of 0.78 is lower than our target 0.86490. A larger dataset could provide a even better model since we have more data to train, and is one of the limitations of this project. The addition of more variables could be a good outlook for future works since can capture more structures and latent factors in the data.
 
 **Evaluation metrics**
 
@@ -121,67 +178,6 @@ Category #5: Model Dynamics Be aware of structural changes. Acknowledge the Heis
 Category #6: Model Complexity Beware the curse of dimensionality. Pursue simplicity and regularization. Seek interpretable machine learning.
 
 Category #7: Research Culture Establish a research culture that rewards quality. Be careful with delegated research
-
-## Data cleaning
-
-For this project we going to use a subset of dataset provided by
-
-for the sake of **reproducibility**, we will illustrate the concepts we present with examples of implementation based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on XX contracts listed in the B3. The time range starts in January 2003 and ends in August 2022. For each point in time, XX **characteristics** describe the decision in the sample. These attributes cover a wide range of topics:
-
-**Price** (Open, High, Low, Close); **Volume**, **Time** (Date, Week of the year, Year), **Return**; **Status**; **Multiplier**; Adjust and Price.
-
-## Data exploration and visualization
-
-The exploration and visualization of the data provide insightful information about the users, the movies and ratings. The first 5 rows of the dataset that we use in this project is presented in table 1. The columns `movieId`, `userId` and `rating` are the variable of interest.
-
-The variables, `movieId`, `userId` and `rating`, that is going to be used to build the model is presented as a matrix in the figure 1. The figure have the movies (`moveId`) in the x axis, the users in the y axis (`userId`), and the respective rating (`rating`). The matrix, extract from a sample of 50 users and 50 movies, provide some insights about the behavior of some users, the preference for some movies, and the sparsity of the matrix. The goal of this project is to fill the blank spaces with a rate.
-
-To see a potential flaw in the data we make a slice of the top 5 most rated movies and most active users. The unique users that provided ratings, the unique movies that were rated and the unique rating provided by a unique user to a unique movie, are presented to illustrate the possible rating matrix $users \times movies$ = $10677 \times 69878 = 746087406$ and the realized rating matrix $10000054$, or 1.34% of points of the matrix is filled. The extremes values confirm that some users are much more actives than others, the most active user rated more than 50% of the total unique movies, and some movies have been rated for more than 1/3 of the total unique users.
-
-The dataset distribution presented trough histograms provide some insights about the general proprieties of the data. As showed in the slice before some movies get rated more than others, and some user are more active than others.
-
-## Modeling approach
-
-The recommendation system is better as its error has decreased, for this project the error is the typical error we make when predicting a movie rating $\left( \hat{y}_{u,i} - y_{u,i} \right)$. The loss function used to evaluate the models is based on the residual mean squared error ($RMSE$) on a test set. The definition of $RMSE$ includes $N$ , the number of user/movie combination, and the sum occurring over all these combination. In this case the Loss function is: $$
-F1=\frac{1}{\frac{\beta^2}{1+\beta^2}\frac{1}{\mbox{recall}} +
-    \frac{1}{1+\beta^2}\frac{1}{\mbox{precision}} }
-$$
-
-The model which $RMSE = 0$ is a perfect model prediction, or without errors. For this project the reported $RMSE < 0.86490$ is the goal. The $RMSE > 1$ means our error is larger than one star, which means a bad model.
-
-### Machine Learning
-
-"If we have enough data, I know we can make predictions," Simons told a colleague.
-
-Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Edição do Kindle.
-
-The machine learning decisions are based on algorithms build with data, so for this project the dataset XXXXX are going to be used to train and test the model. The train_set and test_set are build trough function `createDataPartition` as presented:
-
-### k-Nearest Neighbour Classification approach
-
-The simplest model to recommend a movie to any user, is the model that predict the same rate $\mu$ for all movies regardless of user. In the naive approach the variation of the differences is random, and the independent error $\epsilon_{u,i}$ centered at 0. The model looks like:
-
-$$
-Y_{u,i} = \mu + \varepsilon_{u,i}
-$$
-
-The average of all ratings is the estimate that minimize the $RMSE$, and if we fill the blank cells in the matrix with the $\mu$ we obtain the $\varepsilon_{u,i}$.
-
-### Recursive Partitioning and Regression Trees approach
-
-The values of ${b}_i$ and ${b}_u$ that minimize the full model and the code to calculate the $RMSE$ is presented below.Finally we achieve our goal, the $RMSE$ is lower than 0.86490. But can we do better?
-
-### Classification and Regression with Random Forest approach
-
-A matrix Factorization is the last approach to solve recommendation system problem presented in thisThe model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
-
-# Results
-
-This section presents the modeling results and discusses the model performance of the `movielens` data frame. The code below provided by HarvardX and create the `edx` and `validation` datasets that will be used to train and test our final algorithm.a $RMSE$ of 0.78.
-
-# Conclusion
-
-The recommendation system, developed in this project, provide suggestions for items that are most pertinent to a particular user. The goal of this project was achieved and the $RMSE$ of matrix factorization of 0.78 is lower than our target 0.86490. A larger dataset could provide a even better model since we have more data to train, and is one of the limitations of this project. The addition of more variables could be a good outlook for future works since can capture more structures and latent factors in the data.
 
 # References
 
