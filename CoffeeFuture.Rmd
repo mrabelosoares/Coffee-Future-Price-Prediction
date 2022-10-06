@@ -142,6 +142,13 @@ The decisions was build manually by the author, which look the daily chart and c
 
 ## Data exploration and visualization
 
+```{r Chart ICFFUT Price, message=FALSE, warning=FALSE, echo=TRUE}
+##Data exploration and visualization
+#Chart ICFFUT Price
+chart_Series(ICFFUT_XTS,type = "candlesticks")
+
+```
+
 The exploration and visualization of the data provide insightful information about the users, the movies and ratings. The first 5 rows of the dataset that we use in this project is presented in table 1. The columns `movieId`, `userId` and `rating` are the variable of interest.
 
 The variables, `movieId`, `userId` and `rating`, that is going to be used to build the model is presented as a matrix in the figure 1. The figure have the movies (`moveId`) in the x axis, the users in the y axis (`userId`), and the respective rating (`rating`). The matrix, extract from a sample of 50 users and 50 movies, provide some insights about the behavior of some users, the preference for some movies, and the sparsity of the matrix. The goal of this project is to fill the blank spaces with a rate.
