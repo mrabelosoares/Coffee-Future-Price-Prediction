@@ -51,29 +51,24 @@ download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/b
 ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
 #read file XLSX format with ICF Prices
 ICFFUT_XLSX <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT_XTS")
-#Convert XLXS format to Data Frame and XTS
+#Convert XLXS format to Data Frame
 DFICFFUT_XTS <- as.data.frame(ICFFUT_XLSX)
+#Convert Data Frame to XTS
 ICFFUT_XTS <- xts(DFICFFUT_XTS[-1], order.by = as.Date(DFICFFUT_XTS$Date))
 
 ##Technical Indicators - Price-Based
 #moving average 5 days
 Moving_Average_5 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=5)
-
 #moving average 22 days
 Moving_Average_22 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=22)
-
 #Bollinger Bands
 Bollinger_Bands <- BBands(ICFFUT_XTS$ICFFUT.Close)
-
 #Rate of Change Oscillator
 Rate_Change_Oscillator <- ROC(ICFFUT_XTS$ICFFUT.Close, n=10)
-
 #Relative Strength Index
 Relative_Strength_Index <- RSI(ICFFUT_XTS$ICFFUT.Close)
-
 #Stochastic Oscillator / Stochastic Momentum Index
 Stochastic <- stoch(ICFFUT_XTS$ICFFUT.Close)
-
 #MACD Oscillator
 MACD <- MACD(ICFFUT_XTS$ICFFUT.Close)
 
@@ -90,11 +85,11 @@ Full_ICFFUT <- merge(ICFFUT_XTS,
 #create data frame ICFFUT - 4/5 Arabica Coffee Futures
 DFICFFUT <- data.frame(Date=index(Full_ICFFUT), coredata(Full_ICFFUT))
 
-#create data frame ICFFUT - 4/5 Arabica Coffee Futures
+#Merge Data frame ICFFUT - 4/5 Arabica Coffee Futures and ICFFUT
 CDFICFFUT <- left_join(DFICFFUT, 
                        ICFFUT |> select(Date, Decision, OpenInterest)) |>
-  filter(Date > "2003-02-17") |> 
-  mutate(Decision  = as.factor(Decision))
+  filter(Date > "2003-02-17") |> #excluding NA
+  mutate(Decision  = as.factor(Decision)) #Decision as a factor = Y
 
 ##Data exploration and visualization
 
