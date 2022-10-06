@@ -50,9 +50,95 @@ The process begin with the download, then read the data and create some extensio
 
 ## Data cleaning
 
-For this project we going to use a subset of dataset provided by Nelogica and Clear, and for the sake of **reproducibility**, we will illustrate the concepts based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on 1 contract listed in the B3, which the time range starts in January 2003 and ends in August 2022. For each point in time, 19 **characteristics** describe the decision in the sample. These attributes cover a wide range of topics:
+For this project we going to use a subset of dataset provided by Nelogica and Clear, and for the sake of **reproducibility**, we will illustrate the concepts based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on 1 contract listed at B3, which the time range starts in January 2003 and ends in August 2022. For each point in time, 19 **characteristics** describe the decision in the sample. The dataset are divide between raw data and extensions:
 
-**Price** (Open, High, Low, Close); **Volume**, **Time** (Date, Week of the year, Year), **Return**; **Status**; **Multiplier**; Adjust and Price.
+**Raw data**: Date; Asset; Price (Open, High, Low, Close); Volume; Decision; Open Interest
+
+```{r Load Library, message=FALSE, warning=FALSE, echo=TRUE}
+
+library(caret)
+library(data.table)
+library(fields)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(grid)
+library(ggplot2)
+library(lattice)
+library(gridExtra)
+library(readxl)
+library(dplyr)
+library(purrr)
+library(zoo)
+library(runner)
+library(quantmod)
+library(rpart)
+library(randomForest)
+library(xts)
+library(TTR)
+```
+
+```{r Creat and clean the dataset, message=FALSE, warning=FALSE, echo=TRUE}
+##Data Clean
+
+#create tempfile and download
+dl <- tempfile()
+download.file("https://github.com/mrabelosoares/Coffee-Future-Price-Prediction/blob/2044135ec7c5bcfb6f357374de4ede11c9382fd8/CoffeDatabase.xlsx", dl)
+#read file XLSX format with decisions
+ICFFUT <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT")
+#read file XLSX format with ICF Prices
+ICFFUT_XLSX <- read_xlsx("CoffeDatabase.xlsx", sheet = "ICFFUT_XTS")
+#Convert XLXS format to Data Frame
+DFICFFUT_XTS <- as.data.frame(ICFFUT_XLSX)
+#Convert Data Frame to XTS
+ICFFUT_XTS <- xts(DFICFFUT_XTS[-1], order.by = as.Date(DFICFFUT_XTS$Date))
+```
+
+**Extensions**: moving average 5 days; moving average 22 days; Bollinger Bands; Rate of Change Oscillator; Relative Strength Index; Stochastic Momentum Index; MACD Oscillator.
+
+```{r Technical Indicators - Price-Based, message=FALSE, warning=FALSE, echo=TRUE}
+##Technical Indicators - Price-Based
+#moving average 5 days
+Moving_Average_5 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=5)
+#moving average 22 days
+Moving_Average_22 <- SMA(ICFFUT_XTS$ICFFUT.Close, n=22)
+#Bollinger Bands
+Bollinger_Bands <- BBands(ICFFUT_XTS$ICFFUT.Close)
+#Rate of Change Oscillator
+Rate_Change_Oscillator <- ROC(ICFFUT_XTS$ICFFUT.Close, n=10)
+#Relative Strength Index
+Relative_Strength_Index <- RSI(ICFFUT_XTS$ICFFUT.Close)
+#Stochastic Oscillator / Stochastic Momentum Index
+Stochastic <- stoch(ICFFUT_XTS$ICFFUT.Close)
+#MACD Oscillator
+MACD <- MACD(ICFFUT_XTS$ICFFUT.Close)
+```
+
+The raw data and the extensions are merged to create the complete data frame.
+
+```{r merge raw data and the extensions, message=FALSE, warning=FALSE, echo=TRUE}
+#merge XTS
+Full_ICFFUT <- merge(ICFFUT_XTS, 
+                     Moving_Average_5, 
+                     Moving_Average_22,
+                     Bollinger_Bands,
+                     Rate_Change_Oscillator,
+                     Relative_Strength_Index,
+                     Stochastic,
+                     MACD)
+#create data frame ICFFUT - 4/5 Arabica Coffee Futures
+DFICFFUT <- data.frame(Date=index(Full_ICFFUT), coredata(Full_ICFFUT))
+#Merge Data frame ICFFUT - 4/5 Arabica Coffee Futures and ICFFUT
+CDFICFFUT <- left_join(DFICFFUT, 
+                       ICFFUT |> select(Date, Decision, OpenInterest)) |>
+  filter(Date > "2003-02-17") |> #excluding NA
+  mutate(Decision  = as.factor(Decision)) #Decision as a factor = Y
+```
+
+The extensions are technical indicators based on a daily Close Price of ICF and are select based on
+Chartered Financial Analyst (CFA®) program curriculum. This choice make sense economically since this knowledge are wild spread to the market and the decisions are made at the closing call every day.
+
+The decisions was build manually by the author, which look the daily chart and choose the optimal decision every day. As present in the model of chapter 27.8 Case study: is it a 2 or a 7? [@irizarry2019] the goal of this approach is to look at a picture and classifies what is the best decision: Buy, Sell, Neutral. Is there a pattern inside the own prices of ICFFUT that bring some prediction?
 
 ## Data exploration and visualization
 
