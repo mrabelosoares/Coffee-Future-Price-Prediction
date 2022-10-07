@@ -105,10 +105,33 @@ as_tibble(CDFICFFUT)
 summary(CDFICFFUT)
 str(CDFICFFUT)
 
-#distribution by decision
-CDFICFFUT |>
-  ggplot(aes(Decision)) +
-  geom_histogram(binwidth = 1, color = "black", stat="count")
+#distribution decision by year
+p1 <- CDFICFFUT |>
+  mutate(year = year(as.Date(Date)))|>
+  filter(Decision == "Buy") |>
+  ggplot(aes(x = year)) +
+  geom_bar(stat="count") + 
+  ylab("Buy")
+
+p2 <- CDFICFFUT |>
+  mutate(year = year(as.Date(Date)))|>
+  filter(Decision == "Neutral") |>
+  ggplot(aes(x = year)) +
+  geom_bar(stat="count") + 
+  ylab("Neutral")
+
+p3 <- CDFICFFUT |>
+  mutate(year = year(as.Date(Date)))|>
+  filter(Decision == "Sell") |>
+  ggplot(aes(x = year)) +
+  geom_bar(stat="count") + 
+  ylab("Sell")
+
+
+#Buy, Neutral, Sell distribution trough years
+gridExtra::grid.arrange(p1, p2, p3, 
+                        nrow = 3, 
+                        top = "Buy, Neutral, Sell distribution trough years")
 
 
 #empirical optimal results - sum last 22 days
