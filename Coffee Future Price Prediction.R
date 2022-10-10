@@ -19,6 +19,7 @@ if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.
 if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
 if(!require(xts)) install.packages("xts", repos = "http://cran.us.r-project.org")
 if(!require(TTR)) install.packages("TTR", repos = "http://cran.us.r-project.org")
+if(!require(corrplot)) install.packages("corrplot", repos = "http://cran.us.r-project.org")
 # Load library
 library(caret)
 library(data.table)
@@ -40,6 +41,7 @@ library(rpart)
 library(randomForest)
 library(xts)
 library(TTR)
+library(corrplot)
 
 ##Data Clean
 
@@ -134,6 +136,16 @@ gridExtra::grid.arrange(p1, p2, p3,
                         top = "Buy, Neutral, Sell distribution trough years")
 
 
+#correlation between variables and outcome
+NDFICFFUT <- CDFICFFUT |> mutate( #Decision as a number
+  NDecision = case_when(
+    Decision == "Neutral" ~ 0, #If Neutral, then O
+    Decision == "Buy" ~ 1,#If Buy, then 1
+    Decision == "Sell" ~ -1)#If sell, then -1
+  ) |> select(-Decision, -Date) #less categorical and date column
+C <- cor(NDFICFFUT) #correlation matrix
+corrplot(C, method = 'square', type = 'lower') 
+
 #empirical optimal results - sum last 22 days
 profitICFFUT <- CDFICFFUT |> 
   arrange(Date) |> 
@@ -148,20 +160,28 @@ profitICFFUT <- CDFICFFUT |>
            status == "Hold" & Decision == "Buy" ~ 1,
            status == "Change" & lag(Decision) == "Sell" ~ -1,
            status == "Hold" & Decision == "Sell" ~ -1),
-           adjust = return * multiplier,
+         adjust = return * multiplier,
          profit = case_when(
            Decision == "Neutral" ~ 0,
            Decision != "Neutral" ~ sum_run(adjust, k=22)
            ))
-summary(profitICFFUT)
+summary(profitICFFUT |> select(return, status, adjust, profit))
 
-#profit by time
+#profit adjust from the last 22 days
 profitICFFUT |> 
   ggplot(aes(Date, profit)) + 
   geom_line()
 
-#Modeling approach
+#profit by year
+profitY <- profitICFFUT |> mutate(Year = as.factor(year(as.Date(Date))))
+profit_table <- as.data.frame(tapply(profitY$adjust, 
+                                     profitY$Year, 
+                                     FUN=sum, 
+                                     na.rm = TRUE))
+colnames(profit_table) <- "profit_year"
+profit_table
 
+#Modeling approach
 #create a partition
 separation_date <- as.Date("2020-01-02")
 training_sample <- filter(CDFICFFUT, Date < separation_date)
