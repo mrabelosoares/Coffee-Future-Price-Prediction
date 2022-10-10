@@ -76,6 +76,7 @@ library(rpart)
 library(randomForest)
 library(xts)
 library(TTR)
+library(corrplot)
 ```
 
 ```{r Creat and clean the dataset, message=FALSE, warning=FALSE, echo=TRUE}
@@ -199,7 +200,64 @@ gridExtra::grid.arrange(p1, p2, p3,
                         top = "Buy, Neutral, Sell distribution trough years")
 ```
 
+The graphs show different prevalence for different years, this a relevant information for building a general model, since the prevalence is one off principal components of machine learning measure of performance. The correlation between variables and outcome could bring more information about the behavior of data, which reflects the decisions of traders.
+
+```{r correlation between variables and outcome, message=FALSE, warning=FALSE, echo=TRUE}
+#correlation between variables and outcome
+NDFICFFUT <- CDFICFFUT |> mutate( #Decision as a number
+  NDecision = case_when(
+    Decision == "Neutral" ~ 0, #If Neutral, then O
+    Decision == "Buy" ~ 1,#If Buy, then 1
+    Decision == "Sell" ~ -1)#If sell, then -1
+  ) |> select(-Decision, -Date) #less categorical and date column
+C <- cor(NDFICFFUT) #correlation matrix
+corrplot(C, method = 'square', type = 'lower') 
+```
+
+The correlation between the variables and between variable and outcome are presented below. The prices, mean movies and Bollinger Bands are high correlated
+
 The result of decisions made trough years, or the sum of profits, could be calculated using the code below. The protocol propoused to
+
+```{r empirical optimal results - sum last 22 days, message=FALSE, warning=FALSE, echo=TRUE}
+#empirical optimal results - sum last 22 days
+profitICFFUT <- CDFICFFUT |> 
+  arrange(Date) |> 
+  mutate(return = ICFFUT.Close - lag(ICFFUT.Close) ,
+         status = as.factor(case_when(
+           Decision == lag(Decision) ~ "Hold",
+           Decision != lag(Decision) ~ "Change")),
+         multiplier = case_when(
+           status == "Change" & lag(Decision) == "Neutral" ~ 0,
+           status == "Hold" & Decision == "Neutral" ~ 0,
+           status == "Change" & lag(Decision) == "Buy" ~ 1,
+           status == "Hold" & Decision == "Buy" ~ 1,
+           status == "Change" & lag(Decision) == "Sell" ~ -1,
+           status == "Hold" & Decision == "Sell" ~ -1),
+         adjust = return * multiplier,
+         profit = case_when(
+           Decision == "Neutral" ~ 0,
+           Decision != "Neutral" ~ sum_run(adjust, k=22)
+           ))
+summary(profitICFFUT |> select(return, status, adjust, profit))
+
+```
+
+```{r profit by month and year, message=FALSE, warning=FALSE, echo=TRUE}
+#profit adjust from the last 22 days
+profitICFFUT |> 
+  ggplot(aes(Date, profit)) + 
+  geom_line()
+
+#profit by year
+profitY <- profitICFFUT |> mutate(Year = as.factor(year(as.Date(Date))))
+profit_table <- as.data.frame(tapply(profitY$adjust, 
+                                     profitY$Year, 
+                                     FUN=sum, 
+                                     na.rm = TRUE))
+colnames(profit_table) <- "profit_year"
+profit_table
+
+```
 
 ## Modeling approach
 
@@ -218,6 +276,15 @@ Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Gro
 
 The machine learning decisions are based on algorithms build with data, so for this project the dataset XXXXX are going to be used to train and test the model. The train_set and test_set are build trough function `createDataPartition` as presented:
 
+```{r create a partition, message=FALSE, warning=FALSE, echo=TRUE}
+#Modeling approach
+#create a partition
+separation_date <- as.Date("2020-01-02")
+training_sample <- filter(CDFICFFUT, Date < separation_date)
+testing_sample <- filter(CDFICFFUT, Date >= separation_date)
+head(testing_sample)
+```
+
 ### k-Nearest Neighbour Classification approach
 
 The simplest model to recommend a movie to any user, is the model that predict the same rate $\mu$ for all movies regardless of user. In the naive approach the variation of the differences is random, and the independent error $\epsilon_{u,i}$ centered at 0. The model looks like:
@@ -228,13 +295,63 @@ $$
 
 The average of all ratings is the estimate that minimize the $RMSE$, and if we fill the blank cells in the matrix with the $\mu$ we obtain the $\varepsilon_{u,i}$.
 
+```{r model 1, message=FALSE, warning=FALSE, echo=TRUE}
+#defining the predictors - Model 1
+knn_fit <- knn3(Decision ~ ., 
+                data = training_sample, k=5)
+knn_fit
+
+head(predict(knn_fit, testing_sample, type = "prob"))
+
+#accuracy - model 1
+y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
+confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
+cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
+cm1[["byClass"]][ , "Precision"]
+cm1[["byClass"]][ , "Recall"]
+cm1[["byClass"]][ , "F1"]
+```
+
 ### Recursive Partitioning and Regression Trees approach
 
 The values of ${b}_i$ and ${b}_u$ that minimize the full model and the code to calculate the $RMSE$ is presented below.Finally we achieve our goal, the $RMSE$ is lower than 0.86490. But can we do better?
 
+```{r model 2, message=FALSE, warning=FALSE, echo=TRUE}
+#defining the predictors - Model 2
+fit <- rpart(Decision ~ ., data = training_sample)
+plot(fit, margin = 0.1)
+text(fit, cex = 0.75)
+
+#accuracy - model 2
+y_hat_RT <- predict(fit, testing_sample, type = "class")
+confusionMatrix(y_hat_RT, testing_sample$Decision)$overall["Accuracy"]
+cm2 <- confusionMatrix(y_hat_RT, testing_sample$Decision)
+cm2[["byClass"]][ , "Precision"]
+cm2[["byClass"]][ , "Recall"]
+cm2[["byClass"]][ , "F1"]
+
+```
+
 ### Classification and Regression with Random Forest approach
 
 A matrix Factorization is the last approach to solve recommendation system problem presented in thisThe model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
+
+```{r model 3, message=FALSE, warning=FALSE, echo=TRUE}
+#defining the predictors - Model 3
+fit_RF <- randomForest(Decision ~., data = training_sample) 
+
+rafalib::mypar()
+plot(fit_RF)
+varImp(fit_RF)
+#accuracy - model 3
+y_hat_RF <- predict(fit_RF, testing_sample, type = "class")
+confusionMatrix(y_hat_RF, testing_sample$Decision)$overall["Accuracy"]
+cm3 <- confusionMatrix(y_hat_RF, testing_sample$Decision)
+cm3[["byClass"]][ , "Precision"]
+cm3[["byClass"]][ , "Recall"]
+cm3[["byClass"]][ , "F1"]
+
+```
 
 # Results
 
