@@ -267,12 +267,12 @@ profit_table
 
 ## Modeling approach
 
-The recommendation system is better as its error has decreased, for this project the error is the typical error we make when predicting a movie rating $\left( \hat{y}_{u,i} - y_{u,i} \right)$. The loss function used to evaluate the models is based on the residual mean squared error ($RMSE$) on a test set. The definition of $RMSE$ includes $N$ , the number of user/movie combination, and the sum occurring over all these combination. In this case the Loss function is: $$
+The decision trade system is better as its errors has decrease, for this project the error has a categorical metrics evaluation. The summary metrics for this project is the F1-score, or balanced accuracy, that is the harmonic average of precision recall. As presented in 27.4.5 Balanced accuracy and F1 score [@irizarry2019] "The $F1$ -score can be adapted to weigh specificity and sensitivity differently. To do this, we define β to represent how much more important sensitivity is compared to specificity and consider a weighted harmonic average". For this project the β = 1, because the sensitivity has the same importance of specificity: $$
 F1=\frac{1}{\frac{\beta^2}{1+\beta^2}\frac{1}{\mbox{recall}} +
     \frac{1}{1+\beta^2}\frac{1}{\mbox{precision}} }
 $$
 
-The model which $RMSE = 0$ is a perfect model prediction, or without errors. For this project the reported $RMSE < 0.86490$ is the goal. The $RMSE > 1$ means our error is larger than one star, which means a bad model.
+For this project the $F1 > 0.50$ is the goal. The value was taken from (Coqueret and Guida 2020) where any accuracy above 50% may seem valuable.
 
 ### Machine Learning
 
