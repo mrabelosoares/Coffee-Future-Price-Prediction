@@ -24,7 +24,7 @@ A Machine Learning for Factor Investing is a equity **investment strategies** th
 
 [^2]: <https://www.b3.com.br/en_us/products-and-services/trading/commodities/product-sheet-8AE490C96D41D3A2016D46017EC97262.htm>
 
-[^3]: "The mean squared error is usually hard to interpret. It's not easy to map an error on returns into the impact on investment decisions. The hit ratio is a more intuitive indicator because it evaluates the proportion of correct guesses (and hence profitable investments). Obviously, it is not perfect: 55% of small gains can be mitigated by 45% of large losses. Nonetheless, it is a popular metric and moreover it corresponds to the usual accuracy measure often computed in binary classification exercises. Here, an accuracy of 0.542 is satisfactory. Even if any number above 50% may seem valuable, it must not be forgotten that transaction costs will curtail benefits. Hence, the benchmark threshold is probably at least at 52%."
+[^3]: "The mean squared error is usually hard to interpret. It's not easy to map an error on returns into the impact on investment decisions. The hit ratio is a more intuitive indicator because it evaluates the proportion of correct guesses (and hence profitable investments). Obviously, it is not perfect: 55% of small gains can be mitigated by 45% of large losses. Nonetheless, it is a popular metric and moreover it corresponds to the usual accuracy measure often computed in binary classification exercises. Here, an accuracy of 0.542 is satisfactory. Even if any number above 50% may seem valuable, it must not be forgotten that transaction costs will curtail benefits. Hence, the benchmark threshold is probably at least at 52%." (Coqueret and Guida 2020)
 
 [^4]: <https://corretora.clear.com.br/plataformas/profit-trader-clear/>
 
@@ -95,7 +95,7 @@ DFICFFUT_XTS <- as.data.frame(ICFFUT_XLSX)
 ICFFUT_XTS <- xts(DFICFFUT_XTS[-1], order.by = as.Date(DFICFFUT_XTS$Date))
 ```
 
-**Extensions**: moving average 5 days; moving average 22 days; Bollinger Bands; Rate of Change Oscillator; Relative Strength Index; Stochastic Momentum Index; MACD Oscillator.
+**Extensions**: moving average 5 days; moving average 22 days; Bollinger Bands; Rate of Change Oscillator; Relative Strength Index; Stochastic Momentum Index; MACD Oscillator. The description and equations of technical indicator based on price are available at reference manual: <https://cran.r-project.org/web/packages/TTR/TTR.pdf>
 
 ```{r Technical Indicators - Price-Based, message=FALSE, warning=FALSE, echo=TRUE}
 ##Technical Indicators - Price-Based
@@ -136,9 +136,9 @@ CDFICFFUT <- left_join(DFICFFUT,
   mutate(Decision  = as.factor(Decision)) #Decision as a factor = Y
 ```
 
-The extensions are technical indicators based on a daily Close Price of ICF and are select based on Chartered Financial Analyst (CFA®) program curriculum. This choice make sense economically since this knowledge are wild spread to the market and the decisions are made at the closing call every day.
+The extensions are technical indicators based on a daily Close Price of ICF and are select based on Chartered Financial Analyst (CFA®) program curriculum. This choice make sense economically since this knowledge are widely disseminated to the market and the decisions are made at the closing call every day.
 
-The decisions was build manually by the author, which look the daily chart and choose the optimal decision every day. As present in the model of chapter 27.8 Case study: is it a 2 or a 7? [@irizarry2019] the goal of this approach is to look at a picture and classifies what is the best decision: Buy, Sell, Neutral. Is there a pattern inside the own prices of ICFFUT that bring some prediction?
+The decisions was build manually by the author, which look the daily chart and choose the optimal decision every day. As present in the model of chapter 27.8 Case study: is it a 2 or a 7? [@irizarry2019] the goal of this approach is to look at a picture and classifies what is the best decision at the closing call every day: Buy, Sell, Neutral. Is there a pattern inside the own prices of ICFFUT that bring some prediction?
 
 ## Data exploration and visualization
 
@@ -155,7 +155,9 @@ A functional trade system implies that every day has at least one trade, in this
 
 ```{r Day without trade, message=FALSE, warning=FALSE, echo=TRUE}
 #Day without trade
-Notrade <- CDFICFFUT |> filter(ICFFUT.Volume == "0")
+Notrade <- CDFICFFUT |> 
+  filter(ICFFUT.Volume == "0") |>
+  select(Date, ICFFUT.Close, ICFFUT.Volume, Decision)
 Notrade
 ```
 
@@ -200,7 +202,7 @@ gridExtra::grid.arrange(p1, p2, p3,
                         top = "Buy, Neutral, Sell distribution trough years")
 ```
 
-The graphs show different prevalence for different years, this a relevant information for building a general model, since the prevalence is one off principal components of machine learning measure of performance. The correlation between variables and outcome could bring more information about the behavior of data, which reflects the decisions of traders.
+The graphs show different prevalence for different years, this a relevant information for building a general model, since the prevalence affect the precision and recall of model, and consequently the measurement of performance. The correlation between variables and outcome could bring more information about the behavior of data, which reflects the decisions of traders. To transform the decision from a factor to a number we replace $Neutral$ by $0$, $Buy$ for $1$, and $Sell$ for $-1$.
 
 ```{r correlation between variables and outcome, message=FALSE, warning=FALSE, echo=TRUE}
 #correlation between variables and outcome
@@ -214,9 +216,11 @@ C <- cor(NDFICFFUT) #correlation matrix
 corrplot(C, method = 'square', type = 'lower') 
 ```
 
-The correlation between the variables and between variable and outcome are presented below. The prices, mean movies and Bollinger Bands are high correlated
+The outcome are high correlated with extension fastK, which is 1 of 3 components of Stochastic Momentum Index. On the other side, the prices, the moving averages and the Bollinger Bands are no correlated with decisions. The volume has some correlations with Open interest, but none with others variables.
 
-The result of decisions made trough years, or the sum of profits, could be calculated using the code below. The protocol propoused to
+The result of decisions made trough years, or the sum of profits, could be calculated using the code below. Considering the decision made at every day close call the potencial return are the difference between today close price less the yesterday close price. Another important feature in this model is the status of daily position, which could be hold or change, either $Neutral$,$Buy$ or $Sell$.
+
+The combination of status and current, or lag decision, determine the multiplier we use to calculate the adjust we going to receive or pay. Lets show a example to illustrate the idea, my decision last trade day was to be $Neutral$, and today is $Buy$, which means a change, the multiplier will be 0, because we have no adjust to pay or receive this day. In the next day we hold the $Buy$ position, then or multiplier will be 1 and we receive the positive change in price or we pay the negative difference in price. To complete the model we measure the sum of profit, daily adjust, for the last 22 days, which is a proxy of the monthly profit.
 
 ```{r empirical optimal results - sum last 22 days, message=FALSE, warning=FALSE, echo=TRUE}
 #empirical optimal results - sum last 22 days
@@ -241,6 +245,8 @@ profitICFFUT <- CDFICFFUT |>
 summary(profitICFFUT |> select(return, status, adjust, profit))
 
 ```
+
+The daily change show the volatility of the asset, which reached 71.42 in one day, and has a median and mean below zero, which is compatible with the theory that the future price converge to spot price, or the tendency to lost value trough time. The status was changed 245 period, or 5,5% of the days, this a important feature of the model that intended to minimize the trade cost. The profit, the ultimate goal of decision trade system, are consistently above zero and has median of 51.70 for the last 22 days. The annual profit could be verified in the table below, and show this median are too high for the last 5 years.
 
 ```{r profit by month and year, message=FALSE, warning=FALSE, echo=TRUE}
 #profit adjust from the last 22 days
