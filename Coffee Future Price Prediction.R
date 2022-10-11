@@ -73,7 +73,7 @@ Relative_Strength_Index <- RSI(ICFFUT_XTS$ICFFUT.Close)
 Stochastic <- stoch(ICFFUT_XTS$ICFFUT.Close)
 #MACD Oscillator
 MACD <- MACD(ICFFUT_XTS$ICFFUT.Close)
-245/4435
+
 #merge XTS
 Full_ICFFUT <- merge(ICFFUT_XTS, 
                      Moving_Average_5, 
