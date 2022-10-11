@@ -73,7 +73,7 @@ Relative_Strength_Index <- RSI(ICFFUT_XTS$ICFFUT.Close)
 Stochastic <- stoch(ICFFUT_XTS$ICFFUT.Close)
 #MACD Oscillator
 MACD <- MACD(ICFFUT_XTS$ICFFUT.Close)
-
+245/4435
 #merge XTS
 Full_ICFFUT <- merge(ICFFUT_XTS, 
                      Moving_Average_5, 
@@ -99,7 +99,9 @@ CDFICFFUT <- left_join(DFICFFUT,
 chart_Series(ICFFUT_XTS,type = "candlesticks")
 
 #Day without trade
-Notrade <- CDFICFFUT |> filter(ICFFUT.Volume == "0")
+Notrade <- CDFICFFUT |> 
+  filter(ICFFUT.Volume == "0") |>
+  select(Date, ICFFUT.Close, ICFFUT.Volume, Decision)
 Notrade
 
 #class, type and proprieties of data frame
