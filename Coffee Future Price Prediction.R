@@ -20,6 +20,7 @@ if(!require(randomForest)) install.packages("randomForest", repos = "http://cran
 if(!require(xts)) install.packages("xts", repos = "http://cran.us.r-project.org")
 if(!require(TTR)) install.packages("TTR", repos = "http://cran.us.r-project.org")
 if(!require(corrplot)) install.packages("corrplot", repos = "http://cran.us.r-project.org")
+if(!require(rpart.plot)) install.packages("rpart.plot", repos = "http://cran.us.r-project.org")
 # Load library
 library(caret)
 library(data.table)
@@ -42,7 +43,7 @@ library(randomForest)
 library(xts)
 library(TTR)
 library(corrplot)
-
+library(rpart.plot)
 ##Data Clean
 
 #create tempfile and download
@@ -188,16 +189,16 @@ profit_table
 separation_date <- as.Date("2020-01-02")
 training_sample <- filter(CDFICFFUT, Date < separation_date)
 testing_sample <- filter(CDFICFFUT, Date >= separation_date)
-head(testing_sample)
 
 #defining the predictors - Model 1
 knn_fit <- knn3(Decision ~ ., 
                 data = training_sample, k=5)
 knn_fit
-
+#probability and class of model
 head(predict(knn_fit, testing_sample, type = "prob"))
+head(predict(knn_fit, testing_sample, type = "class"))
 
-#accuracy - model 1
+#balanced accuracy - model 1
 y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
 confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
 cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
@@ -207,8 +208,7 @@ cm1[["byClass"]][ , "F1"]
 
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
-plot(fit, margin = 0.1)
-text(fit, cex = 0.75)
+rpart.plot(fit)
 
 #accuracy - model 2
 y_hat_RT <- predict(fit, testing_sample, type = "class")
