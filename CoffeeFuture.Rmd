@@ -40,7 +40,7 @@ The decision trade system is similar to a **decision support system** (**DSS**) 
 
 Every trade decision taken, in a future market, occur in a certain time $t$, in a specific contract and organized marked, for a unique value. For this project the contract is the 4/5 Arabica Coffee Futures traded at B3, which ticker is ICF, and are available for march, may, july, september and december. The ICFFUT is the representative time-series of current contract and some of thus features will be our the dataset. The dimension of the feature matrix $X$ is $T×K$: where $T$ are daily **observations** and each one of them has $K$ **features**, **inputs**, or **predictors** which will serve as **independent** and **explanatory** variables.
 
-The decision trade system build in this project are made using a similar process and techniques presented at [@coqueret2020a] and some approaches used by Renaissance Technologies.[^6] The backtesting protocol propose by [@arnott2018] are used as reference to evaluate the model.
+The decision trade system build in this project are made using a similar process and techniques presented at [@coqueret2020a] and some approaches used by Renaissance Technologies (Zuckerman, 2019).[^6] The backtesting protocol propose by [@arnott2018] are used as reference to evaluate the model.
 
 [^6]: <https://www.youtube.com/watch?v=lji-jNsXmAM>
 
@@ -50,7 +50,7 @@ The process begin with the download, then read the data and create some extensio
 
 ## Data cleaning
 
-For this project we going to use a subset of dataset provided by Nelogica and Clear, and for the sake of **reproducibility**, we will illustrate the concepts based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on 1 contract listed at B3, which the time range starts in January 2003 and ends in August 2022. For each point in time, 19 **characteristics** describe the decision in the sample. The dataset are divide between raw data and extensions:
+For this project we going to use a subset of dataset provided by Profit Trader Clear, and for the sake of **reproducibility**, we will illustrate the concepts based on a single financial dataset available at <https://github.com/mrabelosoares/Coffee-Future-Price-Prediction>. This dataset comprises information on 1 contract listed at B3, which the time range starts in January 2003 and ends in August 2022. For each point in time, 19 **characteristics** describe the decision in the sample. The dataset are divide between raw data and extensions:
 
 **Raw data**: Date; Asset; Price (Open, High, Low, Close); Volume; Decision; Open Interest
 
@@ -77,6 +77,7 @@ library(randomForest)
 library(xts)
 library(TTR)
 library(corrplot)
+library(rpart.plot)
 ```
 
 ```{r Creat and clean the dataset, message=FALSE, warning=FALSE, echo=TRUE}
@@ -216,11 +217,11 @@ C <- cor(NDFICFFUT) #correlation matrix
 corrplot(C, method = 'square', type = 'lower') 
 ```
 
-The outcome are high correlated with extension fastK, which is 1 of 3 components of Stochastic Momentum Index. On the other side, the prices, the moving averages and the Bollinger Bands are no correlated with decisions. The volume has some correlations with Open interest, but none with others variables.
+The outcome are high correlated with extension fastK, which is 1 of 3 components of Stochastic Momentum Index. On the other side, the prices, the moving averages and the Bollinger Bands are low correlated with decisions. The volume has some correlations with Open interest, but almost nothing with others variables.
 
-The result of decisions made trough years, or the sum of profits, could be calculated using the code below. Considering the decision made at every day close call the potencial return are the difference between today close price less the yesterday close price. Another important feature in this model is the status of daily position, which could be hold or change, either $Neutral$,$Buy$ or $Sell$.
+The result of decisions made trough years, or the sum of profits, could be calculated using the code below. Considering the decision made at every day close call the potential return are the difference between today close price less the yesterday close price. Another important feature in this model is the status of daily position, which could be hold or change, either $Neutral$,$Buy$ or $Sell$.
 
-The combination of status and current, or lag decision, determine the multiplier we use to calculate the adjust we going to receive or pay. Lets show a example to illustrate the idea, my decision last trade day was to be $Neutral$, and today is $Buy$, which means a change, the multiplier will be 0, because we have no adjust to pay or receive this day. In the next day we hold the $Buy$ position, then or multiplier will be 1 and we receive the positive change in price or we pay the negative difference in price. To complete the model we measure the sum of profit, daily adjust, for the last 22 days, which is a proxy of the monthly profit.
+The combination of status and current, or lag decision, determine the multiplier we use to calculate the adjust we going to receive or pay. Lets show a example to illustrate the idea, my decision last trade day was to be $Neutral$, and today is $Buy$, which means a change, the multiplier will be 0, because we have no adjust to pay or receive this day. In the next day we hold the $Buy$ position, then or multiplier will be 1 and we receive the positive change in price or we pay the negative difference in price. To complete the model we measure the sum of profit, daily adjust payed or received, for the last 22 days, which is a proxy of the monthly profit.
 
 ```{r empirical optimal results - sum last 22 days, message=FALSE, warning=FALSE, echo=TRUE}
 #empirical optimal results - sum last 22 days
@@ -246,7 +247,7 @@ summary(profitICFFUT |> select(return, status, adjust, profit))
 
 ```
 
-The daily change show the volatility of the asset, which reached 71.42 in one day, and has a median and mean below zero, which is compatible with the theory that the future price converge to spot price, or the tendency to lost value trough time. The status was changed 245 period, or 5,5% of the days, this a important feature of the model that intended to minimize the trade cost. The profit, the ultimate goal of decision trade system, are consistently above zero and has median of 51.70 for the last 22 days. The annual profit could be verified in the table below, and show this median are too high for the last 5 years.
+The daily change, return, show the volatility of the asset, which reached 71.42 in one day, and has a median and mean below zero, which is compatible with the theory that the future price converge to spot price, or the tendency to lost value trough time. The status was changed in 245 periods, or 5,5% of the days, this a important feature of the model that intended to minimize the trade cost. The profit, the ultimate goal of decision trade system, are consistently above zero and has median of 51.70 for the last 22 days. The annual profit could be verified in the table below, and show this median are too high for the last 5 years.
 
 ```{r profit by month and year, message=FALSE, warning=FALSE, echo=TRUE}
 #profit adjust from the last 22 days
@@ -267,7 +268,7 @@ profit_table
 
 ## Modeling approach
 
-The decision trade system is better as its errors has decrease, for this project the error has a categorical metrics evaluation. The summary metrics for this project is the F1-score, or balanced accuracy, that is the harmonic average of precision recall. As presented in 27.4.5 Balanced accuracy and F1 score [@irizarry2019] "The $F1$ -score can be adapted to weigh specificity and sensitivity differently. To do this, we define β to represent how much more important sensitivity is compared to specificity and consider a weighted harmonic average". For this project the β = 1, because the sensitivity has the same importance of specificity: $$
+The decision trade system is better as its errors has decrease, for this project the error has a categorical metrics evaluation. The summary metrics for this project is the F1-score, or balanced accuracy, that is the harmonic average of precision recall. As presented in 27.4.5 Balanced accuracy and F1 score [@irizarry2019] "The $F1$ -score can be adapted to weigh specificity and sensitivity differently. To do this, we define $\beta$ to represent how much more important sensitivity is compared to specificity and consider a weighted harmonic average". For this project the $\beta = 1$, because the sensitivity has the same importance of specificity: $$
 F1=\frac{1}{\frac{\beta^2}{1+\beta^2}\frac{1}{\mbox{recall}} +
     \frac{1}{1+\beta^2}\frac{1}{\mbox{precision}} }
 $$
@@ -276,11 +277,11 @@ For this project the $F1 > 0.50$ is the goal. The value was taken from (Coqueret
 
 ### Machine Learning
 
-"If we have enough data, I know we can make predictions," Simons told a colleague.
+*"If we have enough data, I know we can make predictions," Simons told a colleague.*[^7]
 
-Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Edição do Kindle.
+[^7]: Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Kindle edition
 
-The machine learning decisions are based on algorithms build with data, so for this project the dataset XXXXX are going to be used to train and test the model. The train_set and test_set are build trough function `createDataPartition` as presented:
+The machine learning decisions are based on algorithms build with data, so for this project the dataset CDFICFFUT are going to be used to train and test the model. The training_sample and testing_sample are build by slicing the time, where the sample before 2020 are the training set and after the test set. The proportion of data for testing is 17% of total, in line with typical choice of 10%-20%[@irizarry2019]:
 
 ```{r create a partition, message=FALSE, warning=FALSE, echo=TRUE}
 #Modeling approach
@@ -288,28 +289,28 @@ The machine learning decisions are based on algorithms build with data, so for t
 separation_date <- as.Date("2020-01-02")
 training_sample <- filter(CDFICFFUT, Date < separation_date)
 testing_sample <- filter(CDFICFFUT, Date >= separation_date)
-head(testing_sample)
 ```
 
-### k-Nearest Neighbour Classification approach
+### k-Nearest Neighbor Classification approach
 
-The simplest model to recommend a movie to any user, is the model that predict the same rate $\mu$ for all movies regardless of user. In the naive approach the variation of the differences is random, and the independent error $\epsilon_{u,i}$ centered at 0. The model looks like:
+The first model in this project is the k-nearest neighbors (kNN) approach, used by Renaissance Technologies and presented at chapter 29.1 Motivation with k-nearest neighbors [@irizarry2019]. The multiple dimensions adaptability is a important feature, specialy in finance, to estimate $p(x_1, x_2)$:
 
 $$
-Y_{u,i} = \mu + \varepsilon_{u,i}
+p(x_1, x_2) = \mbox{Pr}(Y=1 \mid X_1=x_1 , X_2 = x_2).
 $$
 
-The average of all ratings is the estimate that minimize the $RMSE$, and if we fill the blank cells in the matrix with the $\mu$ we obtain the $\varepsilon_{u,i}$.
+As presented "for any point $(x1,x2)$ for which we want an estimate of $p(x1,x2)$, we look for the k nearest points to $(x1,x2)$ and then take an average of the 0s and 1s associated with these points. We refer to the set of points used to compute the average as the *neighborhood*." [@irizarry2019].
+We going to use the knn3 function of caret package, with a $k=5$, to train the dataset. Then we show the first 5 rows of model by probability and class of decision.
 
 ```{r model 1, message=FALSE, warning=FALSE, echo=TRUE}
 #defining the predictors - Model 1
 knn_fit <- knn3(Decision ~ ., 
                 data = training_sample, k=5)
 knn_fit
-
+#probability and class of model
 head(predict(knn_fit, testing_sample, type = "prob"))
-
-#accuracy - model 1
+head(predict(knn_fit, testing_sample, type = "class"))
+#balanced accuracy - model 1
 y_hat_knn <- predict(knn_fit, testing_sample, type = "class")
 confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
 cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
@@ -318,15 +319,16 @@ cm1[["byClass"]][ , "Recall"]
 cm1[["byClass"]][ , "F1"]
 ```
 
-### Recursive Partitioning and Regression Trees approach
+The accuracy of 0.4285714 is better than guessing, which is 0.3333, but is below or goal of 0.5. The F1 - score is below 0.5 for Buy and Sell decisions, and is zero for be Neutral. This could be a consequence of low prevalence of Neutral, or undetected pattern related with this decision.
 
-The values of ${b}_i$ and ${b}_u$ that minimize the full model and the code to calculate the $RMSE$ is presented below.Finally we achieve our goal, the $RMSE$ is lower than 0.86490. But can we do better?
+### Recursive Partitioning for classification trees approach
+
+The tree based method, presented in chapter 6 [@coqueret2020a], is our second model, and was choosen by efficient forecast, are easy to visualize and could model human decision. The goal of model is to minimize the dispersion inside each cluster ?
 
 ```{r model 2, message=FALSE, warning=FALSE, echo=TRUE}
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
-plot(fit, margin = 0.1)
-text(fit, cex = 0.75)
+rpart.plot(fit)
 
 #accuracy - model 2
 y_hat_RT <- predict(fit, testing_sample, type = "class")
@@ -340,7 +342,7 @@ cm2[["byClass"]][ , "F1"]
 
 ### Classification and Regression with Random Forest approach
 
-A matrix Factorization is the last approach to solve recommendation system problem presented in thisThe model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
+A matrix Factorization is the last approach to solve recommendation system problem presented in this The model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
 
 ```{r model 3, message=FALSE, warning=FALSE, echo=TRUE}
 #defining the predictors - Model 3
@@ -442,3 +444,5 @@ Category #7: Research Culture Establish a research culture that rewards quality.
 # References
 
 Coqueret, Guillaume, and Tony Guida. 2020. *Machine learning for factor investing: R version*. Chapman; Hall/CRC.
+
+Zuckerman, Gregory. 2019. The Man Who Solved the Market Penguin Publishing Group. Kindle edition
