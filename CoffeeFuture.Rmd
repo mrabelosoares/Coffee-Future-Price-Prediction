@@ -299,8 +299,7 @@ $$
 p(x_1, x_2) = \mbox{Pr}(Y=1 \mid X_1=x_1 , X_2 = x_2).
 $$
 
-As presented "for any point $(x1,x2)$ for which we want an estimate of $p(x1,x2)$, we look for the k nearest points to $(x1,x2)$ and then take an average of the 0s and 1s associated with these points. We refer to the set of points used to compute the average as the *neighborhood*." [@irizarry2019].
-We going to use the knn3 function of caret package, with a $k=5$, to train the dataset. Then we show the first 5 rows of model by probability and class of decision.
+As presented "for any point $(x1,x2)$ for which we want an estimate of $p(x1,x2)$, we look for the k nearest points to $(x1,x2)$ and then take an average of the 0s and 1s associated with these points. We refer to the set of points used to compute the average as the *neighborhood*." [@irizarry2019]. We going to use the knn3 function of caret package, with a $k=5$, to train the dataset. Then we show the first 5 rows of model by probability and class of decision.
 
 ```{r model 1, message=FALSE, warning=FALSE, echo=TRUE}
 #defining the predictors - Model 1
@@ -316,19 +315,32 @@ confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
 cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
 cm1[["byClass"]][ , "Precision"]
 cm1[["byClass"]][ , "Recall"]
-cm1[["byClass"]][ , "F1"]
+KNN <- cm1[["byClass"]][ , "F1"]
 ```
 
 The accuracy of 0.4285714 is better than guessing, which is 0.3333, but is below or goal of 0.5. The F1 - score is below 0.5 for Buy and Sell decisions, and is zero for be Neutral. This could be a consequence of low prevalence of Neutral, or undetected pattern related with this decision.
 
 ### Recursive Partitioning for classification trees approach
 
-The tree based method, presented in chapter 6 [@coqueret2020a], is our second model, and was choosen by efficient forecast, are easy to visualize and could model human decision. The goal of model is to minimize the dispersion inside each cluster ?
+The tree based method, presented in chapter 6 [@coqueret2020a], is our second model, and was chosen because has efficient forecast, are easy to visualize and could model human decision. The goal of classification tree is to split the dataset into homogeneous cluster, by minimizing dispersion inside each cluster. The output present the proportion of each class, in each cluster, in this case for $J$ classes, we denote these proportions with $p_j$, and for each cluster $k$, the usual loss functions are:
+
+$$
+\mbox{Gini}(j) = 
+1-\sum_{j=1}^Jp_j^2;$$ $$
+\mbox{entropy}(j) = -\sum_{k=1}^K \hat{p}_{j,k}\log(\hat{p}_{j,k}), \mbox{ with } 0 \times \log(0) \mbox{ defined as }0
+$$
+
+The first split is the most important of the model because show the most general rule of data aggregation and reveal the most relevant step to taken in trade decision. To implement this classification tree we going to use rpart function in the rpart package, with default complexity parameter.
 
 ```{r model 2, message=FALSE, warning=FALSE, echo=TRUE}
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
 rpart.plot(fit)
+#Structural break
+as.POSIXlt(1.514808e+09,origin="1970-01-01")
+as.POSIXlt(1.438603e+09,origin="1970-01-01")
+as.POSIXlt(1.319285e+09,origin="1970-01-01")
+as.POSIXlt(1.251158e+09,origin="1970-01-01")
 
 #accuracy - model 2
 y_hat_RT <- predict(fit, testing_sample, type = "class")
@@ -336,34 +348,43 @@ confusionMatrix(y_hat_RT, testing_sample$Decision)$overall["Accuracy"]
 cm2 <- confusionMatrix(y_hat_RT, testing_sample$Decision)
 cm2[["byClass"]][ , "Precision"]
 cm2[["byClass"]][ , "Recall"]
-cm2[["byClass"]][ , "F1"]
-
+Classification_Tree <- cm2[["byClass"]][ , "F1"]
 ```
+
+The general rule of trade decision in ICFFUT is to be \$Selled\$, but if the fastK is bigger than 0.69 the best decision is to change the decision to $Buy$. The $Buy$ has a proportion of 34% of decisions and has a 73% of probability of being right in this decision, this correspond to a F1-score of 0.55. The $Sell$ decision and $Neutral$ decision has structural breaks[^8], which means that decisions change throughout time. The $Sell$ decision has a F1-score of 0.60, much higher than our goal, but the $Neutral$ decision has no F1-score. This reveal the limitations of this approach, since the prevalence differ by class and by year, or could indicate the necessity to review the parameters.
+
+[^8]: <https://en.wikipedia.org/wiki/Structural_break>
 
 ### Classification and Regression with Random Forest approach
 
-A matrix Factorization is the last approach to solve recommendation system problem presented in this The model improved substantially and we achieve the best result so far, we have our choice to train and test the dataset.
+A Random Forest is the last approach to solve the trade decision system problem presented in this project. The goal of this approach is to take the averaging of multiples simple trees to reduce the instability and improve the prediction performance, and the algorithm do this by bootstrapping the sample to induce randomness. The Random Forest used in this project follow the default setup, but the algorithm has more than 27 arguments and has 17 components values, which provides a wide range of tuning possibilities.
 
 ```{r model 3, message=FALSE, warning=FALSE, echo=TRUE}
 #defining the predictors - Model 3
 fit_RF <- randomForest(Decision ~., data = training_sample) 
-
-rafalib::mypar()
-plot(fit_RF)
-varImp(fit_RF)
+#Variable Importance Plot
+varImpPlot(fit_RF)
 #accuracy - model 3
 y_hat_RF <- predict(fit_RF, testing_sample, type = "class")
 confusionMatrix(y_hat_RF, testing_sample$Decision)$overall["Accuracy"]
 cm3 <- confusionMatrix(y_hat_RF, testing_sample$Decision)
 cm3[["byClass"]][ , "Precision"]
 cm3[["byClass"]][ , "Recall"]
-cm3[["byClass"]][ , "F1"]
+Random_Forest <- cm3[["byClass"]][ , "F1"]
 
 ```
 
+The model reveal that the most important variable is the fastK, folowed by pctB, which is a component of Bollinger Bands indicator and quantifies the price relative to the upper and lower Bollinger Band. The Date is a important variable too, showing that model most to adapt to different time frame. The F1 score of $Neutral$ decision is 0.013, which is very low, but it´s not null, showing some improvement regarding the two models before. The $Sell$ decision has a F1 score of 0.58, above our goal, but smaller than the model of tree classification. The improvement in $Neutral$ decision come with a cost to $Buy$ decision that has a F1 score of 0.45 for this model, below our goal.
+
 # Results
 
-This section presents the modeling results and discusses the model performance of the `movielens` data frame. The code below provided by HarvardX and create the `edx` and `validation` datasets that will be used to train and test our final algorithm.a $RMSE$ of 0.78.
+```{r Results, message=FALSE, warning=FALSE, echo=TRUE}
+#Results
+knitr::kable(tibble(c("Buy", "Neutral", "Sell"), 
+                    KNN, 
+                    Classification_Tree, 
+                    Random_Forest))
+```
 
 # Conclusion
 
