@@ -1,3 +1,4 @@
+
 #check library and install packages
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
@@ -189,7 +190,7 @@ profit_table
 separation_date <- as.Date("2020-01-02")
 training_sample <- filter(CDFICFFUT, Date < separation_date)
 testing_sample <- filter(CDFICFFUT, Date >= separation_date)
-
+str(testing_sample)
 #defining the predictors - Model 1
 knn_fit <- knn3(Decision ~ ., 
                 data = training_sample, k=5)
@@ -204,11 +205,17 @@ confusionMatrix(y_hat_knn, testing_sample$Decision)$overall["Accuracy"]
 cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
 cm1[["byClass"]][ , "Precision"]
 cm1[["byClass"]][ , "Recall"]
-cm1[["byClass"]][ , "F1"]
+KNN <- cm1[["byClass"]][ , "F1"]
 
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
 rpart.plot(fit)
+#Structural break
+as.POSIXlt(1.514808e+09,origin="1970-01-01")
+as.POSIXlt(1.438603e+09,origin="1970-01-01")
+as.POSIXlt(1.319285e+09,origin="1970-01-01")
+as.POSIXlt(1.251158e+09,origin="1970-01-01")
+
 
 #accuracy - model 2
 y_hat_RT <- predict(fit, testing_sample, type = "class")
@@ -216,19 +223,24 @@ confusionMatrix(y_hat_RT, testing_sample$Decision)$overall["Accuracy"]
 cm2 <- confusionMatrix(y_hat_RT, testing_sample$Decision)
 cm2[["byClass"]][ , "Precision"]
 cm2[["byClass"]][ , "Recall"]
-cm2[["byClass"]][ , "F1"]
+Classification_Tree <- cm2[["byClass"]][ , "F1"]
 
 #defining the predictors - Model 3
 fit_RF <- randomForest(Decision ~., data = training_sample) 
-
-rafalib::mypar()
-plot(fit_RF)
-varImp(fit_RF)
+#Variable Importance Plot
+varImpPlot(fit_RF)
 #accuracy - model 3
 y_hat_RF <- predict(fit_RF, testing_sample, type = "class")
 confusionMatrix(y_hat_RF, testing_sample$Decision)$overall["Accuracy"]
 cm3 <- confusionMatrix(y_hat_RF, testing_sample$Decision)
 cm3[["byClass"]][ , "Precision"]
 cm3[["byClass"]][ , "Recall"]
-cm3[["byClass"]][ , "F1"]
+Random_Forest <- cm3[["byClass"]][ , "F1"]
+
+#Results
+knitr::kable(tibble(c("Buy", "Neutral", "Sell"), 
+                    KNN, 
+                    Classification_Tree, 
+                    Random_Forest))
+
 
