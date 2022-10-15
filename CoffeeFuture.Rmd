@@ -46,7 +46,7 @@ The decision trade system build in this project are made using a similar process
 
     Renaissance Technologies - Trading Strategies Revealed \| A Documentary
 
-The process begin with the download, then read the data and create some extensions using the Close price. After the data cleaning we explore the data to gain some insight trough visualization and selected table. This insights is the basis of the modelling approach of this project, that have 3 non linear algorithms: k-Nearest Neighbour Classification, Recursive Partitioning and Regression Trees and Classification and Regression with Random Forest
+The process begin with the download, then read the data and create some extensions using the Close price. After the data cleaning we explore the data to gain some insight throughout visualization and selected table. This insights is the basis of the modelling approach of this project, that have 3 non linear algorithms: k-Nearest Neighbour Classification, Recursive Partitioning and Classification Trees, and Classification and Regression with Random Forest
 
 ## Data cleaning
 
@@ -143,7 +143,7 @@ The decisions was build manually by the author, which look the daily chart and c
 
 ## Data exploration and visualization
 
-The exploration and visualization of the data provide insightful information about the behavior of price trough time. The graphic below show the price range between 2003 and 2022, as we can see the volatility was different for different years.
+The exploration and visualization of the data provide insightful information about the behavior of price throughout time. The graphic below show the price range between 2003 and 2022, as we can see the volatility was different for different years.
 
 ```{r Chart ICFFUT Price, message=FALSE, warning=FALSE, echo=TRUE}
 ##Data exploration and visualization
@@ -171,7 +171,7 @@ summary(CDFICFFUT)
 str(CDFICFFUT)
 ```
 
-As presented above our matrix have $4,435 \times 21$ variables, mostly numerical column. The close price, the principal column, has 119.6 as minimal value and 1206.0 as maximal, and a median of 470.3. The decision column, our outcome, has a unbalanced prevalence: $Buy = 1662$, $Neutral = 665$, $Sell = 2108$. Lets explore the distribution of decisions trough years.
+As presented above our matrix have $4,435 \times 21$ variables, mostly numerical column. The close price, the principal column, has 119.6 as minimal value and 1206.0 as maximal, and a median of 470.3. The decision column, our outcome, has a unbalanced prevalence: $Buy = 1662$, $Neutral = 665$, $Sell = 2108$. Lets explore the distribution of decisions throughout years.
 
 ```{r distribution decision by year, message=FALSE, warning=FALSE, echo=TRUE}
 #distribution decision by year
@@ -197,10 +197,10 @@ p3 <- CDFICFFUT |>
   ylab("Sell")
 
 
-#Buy, Neutral, Sell distribution trough years
+#Buy, Neutral, Sell distribution throughout years
 gridExtra::grid.arrange(p1, p2, p3, 
                         nrow = 3, 
-                        top = "Buy, Neutral, Sell distribution trough years")
+                        top = "Buy, Neutral, Sell distribution throughout years")
 ```
 
 The graphs show different prevalence for different years, this a relevant information for building a general model, since the prevalence affect the precision and recall of model, and consequently the measurement of performance. The correlation between variables and outcome could bring more information about the behavior of data, which reflects the decisions of traders. To transform the decision from a factor to a number we replace $Neutral$ by $0$, $Buy$ for $1$, and $Sell$ for $-1$.
@@ -219,7 +219,7 @@ corrplot(C, method = 'square', type = 'lower')
 
 The outcome are high correlated with extension fastK, which is 1 of 3 components of Stochastic Momentum Index. On the other side, the prices, the moving averages and the Bollinger Bands are low correlated with decisions. The volume has some correlations with Open interest, but almost nothing with others variables.
 
-The result of decisions made trough years, or the sum of profits, could be calculated using the code below. Considering the decision made at every day close call the potential return are the difference between today close price less the yesterday close price. Another important feature in this model is the status of daily position, which could be hold or change, either $Neutral$,$Buy$ or $Sell$.
+The result of decisions made throughout years, or the sum of profits, could be calculated using the code below. Considering the decision made at every day close call the potential return are the difference between today close price less the yesterday close price. Another important feature in this model is the status of daily position, which could be hold or change, either $Neutral$,$Buy$ or $Sell$.
 
 The combination of status and current, or lag decision, determine the multiplier we use to calculate the adjust we going to receive or pay. Lets show a example to illustrate the idea, my decision last trade day was to be $Neutral$, and today is $Buy$, which means a change, the multiplier will be 0, because we have no adjust to pay or receive this day. In the next day we hold the $Buy$ position, then or multiplier will be 1 and we receive the positive change in price or we pay the negative difference in price. To complete the model we measure the sum of profit, daily adjust payed or received, for the last 22 days, which is a proxy of the monthly profit.
 
@@ -247,7 +247,7 @@ summary(profitICFFUT |> select(return, status, adjust, profit))
 
 ```
 
-The daily change, return, show the volatility of the asset, which reached 71.42 in one day, and has a median and mean below zero, which is compatible with the theory that the future price converge to spot price, or the tendency to lost value trough time. The status was changed in 245 periods, or 5,5% of the days, this a important feature of the model that intended to minimize the trade cost. The profit, the ultimate goal of decision trade system, are consistently above zero and has median of 51.70 for the last 22 days. The annual profit could be verified in the table below, and show this median are too high for the last 5 years.
+The daily change, return, show the volatility of the asset, which reached 71.42 in one day, and has a median and mean below zero, which is compatible with the theory that the future price converge to spot price, or the tendency to lost value throughout time. The status was changed in 245 periods, or 5,5% of the days, this a important feature of the model that intended to minimize the trade cost. The profit, the ultimate goal of decision trade system, are consistently above zero and has median of 51.70 for the last 22 days. The annual profit could be verified in the table below, and show this median are too high for the last 5 years.
 
 ```{r profit by month and year, message=FALSE, warning=FALSE, echo=TRUE}
 #profit adjust from the last 22 days
@@ -268,12 +268,12 @@ profit_table
 
 ## Modeling approach
 
-The decision trade system is better as its errors has decrease, for this project the error has a categorical metrics evaluation. The summary metrics for this project is the F1-score, or balanced accuracy, that is the harmonic average of precision recall. As presented in 27.4.5 Balanced accuracy and F1 score [@irizarry2019] "The $F1$ -score can be adapted to weigh specificity and sensitivity differently. To do this, we define $\beta$ to represent how much more important sensitivity is compared to specificity and consider a weighted harmonic average". For this project the $\beta = 1$, because the sensitivity has the same importance of specificity: $$
+The decision trade system is better as its errors has decrease, for this project the error has a categorical metrics evaluation. The summary metrics for this project is the F1-score, or balanced accuracy, that is the harmonic average of precision and recall. As presented in 27.4.5 Balanced accuracy and F1 score [@irizarry2019] "The $F1$ -score can be adapted to weigh specificity and sensitivity differently. To do this, we define $\beta$ to represent how much more important sensitivity is compared to specificity and consider a weighted harmonic average". For this project the $\beta = 1$, because the sensitivity has the same importance of specificity: $$
 F1=\frac{1}{\frac{\beta^2}{1+\beta^2}\frac{1}{\mbox{recall}} +
     \frac{1}{1+\beta^2}\frac{1}{\mbox{precision}} }
 $$
 
-For this project the $F1 > 0.50$ is the goal. The value was taken from (Coqueret and Guida 2020) where any accuracy above 50% may seem valuable.
+For this project the $F1 > 0.50$ is the goal. The value was taken from (Coqueret and Guida 2020) where was suggested thata any accuracy above 50% may seem valuable.
 
 ### Machine Learning
 
@@ -316,6 +316,7 @@ cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
 cm1[["byClass"]][ , "Precision"]
 cm1[["byClass"]][ , "Recall"]
 KNN <- cm1[["byClass"]][ , "F1"]
+KNN
 ```
 
 The accuracy of 0.4285714 is better than guessing, which is 0.3333, but is below or goal of 0.5. The F1 - score is below 0.5 for Buy and Sell decisions, and is zero for be Neutral. This could be a consequence of low prevalence of Neutral, or undetected pattern related with this decision.
@@ -378,92 +379,23 @@ The model reveal that the most important variable is the fastK, folowed by pctB,
 
 # Results
 
+This section presents the modeling results and discusses the performance of each approach. The table below shows the F1 score by decision and by approach.
+
 ```{r Results, message=FALSE, warning=FALSE, echo=TRUE}
 #Results
-knitr::kable(tibble(c("Buy", "Neutral", "Sell"), 
+knitr::kable(tibble(Decision = c("Buy", "Neutral", "Sell"), 
                     KNN, 
                     Classification_Tree, 
-                    Random_Forest))
+                    Random_Forest), 
+             caption = "F1 Score by approach")
 ```
+
+The highest F1 score for $Buy$ and $Sell$ are achieved using classification tree, and are above our goal of 50%. The $Sell$ decision has the best result, which could be influence of the highest prevalence. The $Neutral$ decision was predicted only by random forest approach, and was a poor detection, F1 score is below 3%. The profit, or loss, of the test set was not presented since the true out-of-sample tests are only possible in live trading.
 
 # Conclusion
 
-The recommendation system, developed in this project, provide suggestions for items that are most pertinent to a particular user. The goal of this project was achieved and the $RMSE$ of matrix factorization of 0.78 is lower than our target 0.86490. A larger dataset could provide a even better model since we have more data to train, and is one of the limitations of this project. The addition of more variables could be a good outlook for future works since can capture more structures and latent factors in the data.
-
-**Evaluation metrics**
-
-Avoiding False Positives: A Protocol
-
-Model that makes sense economically: Renaissance Technologies Trading Strategies
-
-1- Mean Reversion Strategy: Buy if the close price move a certain level below their recent trend line, Sell if above certain level above and be Neutral if the price is too close of trend line.
-
-2- Stochastic Strategy: Non linear machine learning Kernel
-
-3- The Kelly Criterion: scientific gambling method Assumption: future returns depend on decisions toked on close price. The relationship between the characteristics of market and performance is largely unknown and probably time-varying. This is why ML can be useful: to detect some hidden patterns beyond the documented asset pricing anomalies. Moreover, dynamic training allows to adapt to changing market conditions.
-
-1\. Research Motivation: ex ante/ex post economic foundation\
-a) Does the model have a solid economic foundation?
-
-Coffee It is one of the most important commodities traded globally and one of the most popular beverages in the world. World production is spread over 55 developing countries and is conducted by about 26 million producers, cultivated in tropical and subtropical areas.
-
-The development of local organizations or instruments to help managing price risk, such as organized futures, in developing countries, like Brazil, is a important step to minimize the risk and challenges of small producers, since the larger and more liquids futures markets are located in the United States and Europe.
-
-The Futures price volatility is large once coffee market has low price elasticity of demand and supply in the short run. In addition, previous studies have pointed to the existence of asymmetric price transmission within the coffee chain. Because of the concentration of roasting and retail sectors, retail prices respond faster to price increases than to price decreases, while farm prices follow more closely supply and demand conditions.
-
-b)  Did the economic foundation or hypothesis exist before the research was conducted?\
-    Price changes are commonly caused by the arrival of new information from ICO crop reports, as presented in work The Reaction of Coffee Futures Price Volatility to Crop Reports (2017)
-
-2\. Multiple Testing and Statistical Methods\
-a) Did the researcher keep track of all models and variables that were tried (both successful and unsuccessful) and are the researchers aware of the multiple-testing issue?
-
-b)  Is there a full accounting of all possible interaction variables if interaction variables are used?\
-c)  Did the researchers investigate all variables set out in the research agenda or did they cut the research as soon as they found a good model?\
-
-3\. Data and Sample Choice\
-a) Do the data chosen for examination make sense? And, if other data are available, does it make sense to exclude these data?\
-b) Did the researchers take steps to ensure the integrity of the data?\
-c) Do the data transformations, such as scaling, make sense? Were they selected in advance? And are the results robust to minor changes in these transformations?\
-d) If outliers are excluded, are the exclusion rules reasonable?\
-e) If the data are winsorized, was there a good reason to do it? Was the winsorization rule chosen before the research was started? Was only one winsorization rule tried (as opposed to many)?\
-
-4\. Cross-Validation\
-a) Are the researchers aware that true out-of-sample tests are only possible in live trading?\
-b) Are steps in place to eliminate the risk of out-of-sample "iterations" (i.e., an in-sample model that is later modified to fit out-of-sample data)?\
-c) Is the out-of-sample analysis representative of live trading? For example, are trading costs and data revisions taken into account?\
-
-5\. Model Dynamics\
-a) Is the model resilient to structural change and have the researchers taken steps to minimize the overfitting of the model dynamics?\
-b) Does the analysis take into account the risk/likelihood of overcrowding in live trading?\
-c) Do researchers take steps to minimize the tweaking of a live model?\
-
-6\. Complexity\
-a) Does the model avoid the curse of dimensionality?\
-b) Have the researchers taken steps to produce the simplest practicable model specification?\
-c) Is an attempt made to interpret the predictions of the machine learning model rather than using it as a black box?
-
-\
-7. Research Culture\
-a) Does the research culture reward quality of the science rather than finding the winning strategy?\
-b) Do the researchers and management understand that most tests will fail?\
-c) Are expectations clear (that researchers should seek the truth not just something that works) when research is delegated?
-
-Category #1: Research Motivation
-
-Category #2: Multiple Testing and Statistical Methods Keep track of: what is tried, combinations of variables, Beware the parallel universe problem.
-
-Category #3: Sample Choice and Data Define the test sample ex ante. Ensure data quality Document choices in data transformations Do not arbitrarily exclude outliers. Select Winsorization level before constructing the model.
-
-Category #4: Cross-Validation Acknowledge out of sample is not really out of sample Understand iterated out of sample is not out of sample. Do not ignore trading costs and fees.
-
-Category #5: Model Dynamics Be aware of structural changes. Acknowledge the Heisenberg Uncertainty Principle and overcrowding. Refrain from tweaking the model.
-
-Category #6: Model Complexity Beware the curse of dimensionality. Pursue simplicity and regularization. Seek interpretable machine learning.
-
-Category #7: Research Culture Establish a research culture that rewards quality. Be careful with delegated research
+The decision traded system, developed in this project, provide suggestions for decision that are most pertinent to a particular combination of close price and own extensions. The goal of this project was partialy achieved and the $F1 score$ of $Buy$ and $Sell$ is above 50%, our goal . The add of other assets and economic variable could provide a even better model since we have more data to train, and is one of the limitations of this project, because a larger dataset can capture more structures and latent factors in the data.
 
 # References
-
-Coqueret, Guillaume, and Tony Guida. 2020. *Machine learning for factor investing: R version*. Chapman; Hall/CRC.
 
 Zuckerman, Gregory. 2019. The Man Who Solved the Market Penguin Publishing Group. Kindle edition
