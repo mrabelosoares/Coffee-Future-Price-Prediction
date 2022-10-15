@@ -134,10 +134,10 @@ p3 <- CDFICFFUT |>
   ylab("Sell")
 
 
-#Buy, Neutral, Sell distribution trough years
+#Buy, Neutral, Sell distribution throughout years
 gridExtra::grid.arrange(p1, p2, p3, 
                         nrow = 3, 
-                        top = "Buy, Neutral, Sell distribution trough years")
+                        top = "Buy, Neutral, Sell distribution throughout years")
 
 
 #correlation between variables and outcome
@@ -206,7 +206,7 @@ cm1 <- confusionMatrix(y_hat_knn, testing_sample$Decision)
 cm1[["byClass"]][ , "Precision"]
 cm1[["byClass"]][ , "Recall"]
 KNN <- cm1[["byClass"]][ , "F1"]
-
+KNN
 #defining the predictors - Model 2
 fit <- rpart(Decision ~ ., data = training_sample)
 rpart.plot(fit)
@@ -238,9 +238,10 @@ cm3[["byClass"]][ , "Recall"]
 Random_Forest <- cm3[["byClass"]][ , "F1"]
 
 #Results
-knitr::kable(tibble(c("Buy", "Neutral", "Sell"), 
+knitr::kable(tibble(Decision = c("Buy", "Neutral", "Sell"), 
                     KNN, 
                     Classification_Tree, 
-                    Random_Forest))
+                    Random_Forest), 
+             caption = "F1 Score by approach")
 
 
