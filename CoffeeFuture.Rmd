@@ -396,7 +396,7 @@ The highest F1 score for $Buy$ and $Sell$ are achieved using classification tree
 
 # Conclusion
 
-The decision traded system, developed in this project, provide suggestions for decision that are most pertinent to a particular combination of close price and their own extensions. The goal of this project was partially achieved and the $F1 score$ of $Buy$ and $Sell$ is above 50%, our goal, using Classification Tree . The add of other assets and economic variable could provide a even better model since we have more data to train, and can capture more structures and latent factors in the data.
+The decision traded system, developed in this project, provide suggestions for decision that are most pertinent to a particular combination of close price and their own extensions. The goal of this project was partially achieved and the $F1 score$ of $Buy$ and $Sell$ is above 50%, our goal, using Classification Tree . The $Neutral$ decision does not achieved $F1 score$ above 3%, for futures works the increase of prevalence and continuation throughout time could improve the performance. The increase in predictability of coffee future price could reduce the risk of all participants in the market, specially the farmers in the peripherical financial market like Brazil. The main limitation of this project is the absence of other asset and economic variable, in this case, for future works the add of other assets and economic variable could provide a even better model since we have more data to train, and can capture more structures and latent factors in the data.
 
 # References
 
