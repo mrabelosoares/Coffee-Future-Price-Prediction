@@ -277,7 +277,7 @@ For this project the $F1 > 0.50$ is the goal. The value was taken from (Coqueret
 
 ### Machine Learning
 
-*"If we have enough data, I know we can make predictions," Simons told a colleague.*[^7]
+*"If we have enough data, I know we can make predictions,"* **James Harris Simons**[^7]
 
 [^7]: Zuckerman, Gregory. The Man Who Solved the Market (p. 2). Penguin Publishing Group. Kindle edition
 
@@ -293,7 +293,7 @@ testing_sample <- filter(CDFICFFUT, Date >= separation_date)
 
 ### k-Nearest Neighbor Classification approach
 
-The first model in this project is the k-nearest neighbors (kNN) approach, used by Renaissance Technologies and presented at chapter 29.1 Motivation with k-nearest neighbors [@irizarry2019]. The multiple dimensions adaptability is a important feature, specialy in finance, to estimate $p(x_1, x_2)$:
+The first model in this project is the k-nearest neighbors (kNN) approach, used by Renaissance Technologies and presented at chapter 29.1 Motivation with k-nearest neighbors [@irizarry2019]. The multiple dimensions adaptability is a important feature, specially in finance, to estimate $p(x_1, x_2)$:
 
 $$
 p(x_1, x_2) = \mbox{Pr}(Y=1 \mid X_1=x_1 , X_2 = x_2).
@@ -319,11 +319,11 @@ KNN <- cm1[["byClass"]][ , "F1"]
 KNN
 ```
 
-The accuracy of 0.4285714 is better than guessing, which is 0.3333, but is below or goal of 0.5. The F1 - score is below 0.5 for Buy and Sell decisions, and is zero for be Neutral. This could be a consequence of low prevalence of Neutral, or undetected pattern related with this decision.
+The accuracy of 0.4285714 is better than guessing, which is 0.3333, but is below our goal of 0.5. The F1 - score is below 0.5 for $Buy$ and $Sell$ decisions, and is zero for be $Neutral$. This could be a consequence of low prevalence of $Neutral$, or undetected pattern related with this decision.
 
 ### Recursive Partitioning for classification trees approach
 
-The tree based method, presented in chapter 6 [@coqueret2020a], is our second model, and was chosen because has efficient forecast, are easy to visualize and could model human decision. The goal of classification tree is to split the dataset into homogeneous cluster, by minimizing dispersion inside each cluster. The output present the proportion of each class, in each cluster, in this case for $J$ classes, we denote these proportions with $p_j$, and for each cluster $k$, the usual loss functions are:
+The tree based method, presented in chapter 6 [@coqueret2020a], is our second model, and was chosen because has efficient forecast, are easy to visualize and could model human decision. The goal of classification tree is to split the dataset into homogeneous cluster, by minimizing dispersion inside each cluster. The output show the proportion of each class, in each cluster, in this case for $J$ classes, we denote these proportions with $p_j$, and for each cluster $k$, the usual loss functions are:
 
 $$
 \mbox{Gini}(j) = 
@@ -350,9 +350,10 @@ cm2 <- confusionMatrix(y_hat_RT, testing_sample$Decision)
 cm2[["byClass"]][ , "Precision"]
 cm2[["byClass"]][ , "Recall"]
 Classification_Tree <- cm2[["byClass"]][ , "F1"]
+Classification_Tree
 ```
 
-The general rule of trade decision in ICFFUT is to be \$Selled\$, but if the fastK is bigger than 0.69 the best decision is to change the decision to $Buy$. The $Buy$ has a proportion of 34% of decisions and has a 73% of probability of being right in this decision, this correspond to a F1-score of 0.55. The $Sell$ decision and $Neutral$ decision has structural breaks[^8], which means that decisions change throughout time. The $Sell$ decision has a F1-score of 0.60, much higher than our goal, but the $Neutral$ decision has no F1-score. This reveal the limitations of this approach, since the prevalence differ by class and by year, or could indicate the necessity to review the parameters.
+The general rule of trade decision in ICFFUT is to be $Sold$, but if the fastK is bigger than 0.69 the best decision is to change the decision to $Buy$. The $Buy$ has a proportion of 34% of decisions and has a 73% of probability of being right in this decision, this correspond to a F1-score of 0.55. The $Sell$ decision and $Neutral$ decision has structural breaks[^8], which means that decisions change throughout time. The $Sell$ decision has a F1-score of 0.60, much higher than our goal, but the $Neutral$ decision has no F1-score. This reveal the limitations of this approach, since the prevalence differ by class and by year, or could indicate the necessity to review the parameters.
 
 [^8]: <https://en.wikipedia.org/wiki/Structural_break>
 
@@ -372,10 +373,10 @@ cm3 <- confusionMatrix(y_hat_RF, testing_sample$Decision)
 cm3[["byClass"]][ , "Precision"]
 cm3[["byClass"]][ , "Recall"]
 Random_Forest <- cm3[["byClass"]][ , "F1"]
-
+Random_Forest
 ```
 
-The model reveal that the most important variable is the fastK, folowed by pctB, which is a component of Bollinger Bands indicator and quantifies the price relative to the upper and lower Bollinger Band. The Date is a important variable too, showing that model most to adapt to different time frame. The F1 score of $Neutral$ decision is 0.013, which is very low, but it´s not null, showing some improvement regarding the two models before. The $Sell$ decision has a F1 score of 0.58, above our goal, but smaller than the model of tree classification. The improvement in $Neutral$ decision come with a cost to $Buy$ decision that has a F1 score of 0.45 for this model, below our goal.
+The model reveal that the most important variable is the fastK, followed by pctB, which is a component of Bollinger Bands indicator and quantifies the price relative to the upper and lower Bollinger Band. The Date is a important variable too, showing that model most to adapt to different time frame. The F1 score of $Neutral$ decision is 0.013, which is very low, but it´s not null, showing some improvement regarding the two models before. The $Sell$ decision has a F1 score of 0.58, above our goal, but smaller than the model of tree classification. The improvement in $Neutral$ decision come with a cost to $Buy$ decision that has a F1 score of 0.45 for this model, below our goal.
 
 # Results
 
@@ -387,15 +388,16 @@ knitr::kable(tibble(Decision = c("Buy", "Neutral", "Sell"),
                     KNN, 
                     Classification_Tree, 
                     Random_Forest), 
-             caption = "F1 Score by approach")
+             caption = "F1 Score by approach",
+             position = "h")
 ```
 
-The highest F1 score for $Buy$ and $Sell$ are achieved using classification tree, and are above our goal of 50%. The $Sell$ decision has the best result, which could be influence of the highest prevalence. The $Neutral$ decision was predicted only by random forest approach, and was a poor detection, F1 score is below 3%. The profit, or loss, of the test set was not presented since the true out-of-sample tests are only possible in live trading.
+The highest F1 score for $Buy$ and $Sell$ are achieved using classification tree, and are above our goal of 50%. The $Sell$ decision has the best result, which could be influence of the highest prevalence. The $Neutral$ decision was predicted only by random forest approach, and has a poor performance F1 score that is below 3%. The profit, or loss, of the test set was not presented since the true out-of-sample tests are only possible in live trading.
 
 # Conclusion
 
-The decision traded system, developed in this project, provide suggestions for decision that are most pertinent to a particular combination of close price and own extensions. The goal of this project was partialy achieved and the $F1 score$ of $Buy$ and $Sell$ is above 50%, our goal . The add of other assets and economic variable could provide a even better model since we have more data to train, and is one of the limitations of this project, because a larger dataset can capture more structures and latent factors in the data.
+The decision traded system, developed in this project, provide suggestions for decision that are most pertinent to a particular combination of close price and their own extensions. The goal of this project was partially achieved and the $F1 score$ of $Buy$ and $Sell$ is above 50%, our goal, using Classification Tree . The add of other assets and economic variable could provide a even better model since we have more data to train, and can capture more structures and latent factors in the data.
 
 # References
 
-Zuckerman, Gregory. 2019. The Man Who Solved the Market Penguin Publishing Group. Kindle edition
+Zuckerman, Gregory. 2019. The Man Who Solved the Market, Penguin Publishing Group. Kindle edition
