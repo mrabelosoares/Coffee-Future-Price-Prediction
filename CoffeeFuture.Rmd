@@ -1,7 +1,7 @@
 ---
 title: 'Coffee Future Price Pediction Project: ICFFUT B3 Dataset'
 author: "Mauricio Rabelo Soares"
-date: "03 set 2022"
+date: "16 set 2022"
 output:
   pdf_document:
     latex_engine: lualatex
