@@ -224,6 +224,7 @@ cm2 <- confusionMatrix(y_hat_RT, testing_sample$Decision)
 cm2[["byClass"]][ , "Precision"]
 cm2[["byClass"]][ , "Recall"]
 Classification_Tree <- cm2[["byClass"]][ , "F1"]
+Classification_Tree
 
 #defining the predictors - Model 3
 fit_RF <- randomForest(Decision ~., data = training_sample) 
@@ -236,12 +237,13 @@ cm3 <- confusionMatrix(y_hat_RF, testing_sample$Decision)
 cm3[["byClass"]][ , "Precision"]
 cm3[["byClass"]][ , "Recall"]
 Random_Forest <- cm3[["byClass"]][ , "F1"]
-
+Random_Forest
 #Results
 knitr::kable(tibble(Decision = c("Buy", "Neutral", "Sell"), 
                     KNN, 
                     Classification_Tree, 
                     Random_Forest), 
-             caption = "F1 Score by approach")
+             caption = "F1 Score by approach",
+             position = "h")
 
 
